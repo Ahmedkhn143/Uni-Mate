@@ -81,7 +81,7 @@ export default function AdminPastPapersPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto mt-2 sm:mt-0">
                   <a
                     href={p.file_url}
                     target="_blank"
@@ -116,13 +116,13 @@ export default function AdminPastPapersPage() {
         </h2>
         <div className="divide-y divide-slate-100 dark:divide-slate-800 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-hidden">
           {approvedPapers.map((p) => (
-            <div key={p.id} className="p-4 flex items-center justify-between text-xs">
-              <div>
+            <div key={p.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div className="min-w-0">
                 <span className="font-bold text-slate-900 dark:text-slate-100 mr-2">{p.subject_code}:</span>
                 <span className="text-slate-600 dark:text-slate-300">{p.title}</span>
                 <span className="text-[10px] text-slate-400 ml-2">({p.downloads} downloads)</span>
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded">
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded shrink-0 self-start sm:self-auto">
                 Approved
               </span>
             </div>

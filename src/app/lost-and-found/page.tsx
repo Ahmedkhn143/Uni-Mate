@@ -69,16 +69,16 @@ export default function LostAndFoundPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
           <Link
             href="/lost-and-found/create?type=lost"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 transition"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 transition flex-1 sm:flex-none text-center"
           >
             <PlusCircle className="w-4 h-4" /> Report Lost
           </Link>
           <Link
             href="/lost-and-found/create?type=found"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition flex-1 sm:flex-none text-center"
           >
             <PlusCircle className="w-4 h-4" /> Report Found
           </Link>
@@ -113,10 +113,10 @@ export default function LostAndFoundPage() {
       </div>
 
       {/* Type Filter Tabs */}
-      <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-semibold w-fit">
+      <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-semibold overflow-x-auto max-w-full pb-1">
         <button
           onClick={() => setTypeFilter('all')}
-          className={`px-3 py-1.5 rounded-lg transition ${
+          className={`px-3 py-1.5 rounded-lg transition shrink-0 ${
             typeFilter === 'all'
               ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -126,7 +126,7 @@ export default function LostAndFoundPage() {
         </button>
         <button
           onClick={() => setTypeFilter('lost')}
-          className={`px-3 py-1.5 rounded-lg transition ${
+          className={`px-3 py-1.5 rounded-lg transition shrink-0 ${
             typeFilter === 'lost'
               ? 'bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 shadow-xs'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -136,7 +136,7 @@ export default function LostAndFoundPage() {
         </button>
         <button
           onClick={() => setTypeFilter('found')}
-          className={`px-3 py-1.5 rounded-lg transition ${
+          className={`px-3 py-1.5 rounded-lg transition shrink-0 ${
             typeFilter === 'found'
               ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -146,7 +146,7 @@ export default function LostAndFoundPage() {
         </button>
         <button
           onClick={() => setTypeFilter('resolved')}
-          className={`px-3 py-1.5 rounded-lg transition ${
+          className={`px-3 py-1.5 rounded-lg transition shrink-0 ${
             typeFilter === 'resolved'
               ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'

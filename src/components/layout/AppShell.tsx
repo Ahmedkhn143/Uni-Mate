@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex-1 flex w-full max-w-7xl mx-auto">
         {shouldShowSidebar && <Sidebar />}
 
-        <main className={`flex-1 min-w-0 ${shouldShowSidebar ? 'px-4 sm:px-8 py-6 pb-24 md:pb-12' : 'w-full'}`}>
+        <main className={`flex-1 min-w-0 ${shouldShowSidebar ? 'px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-12' : (isLandingPage ? 'w-full' : 'w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-12')}`}>
           {children}
         </main>
       </div>

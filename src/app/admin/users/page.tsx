@@ -79,7 +79,8 @@ export default function AdminUsersPage() {
 
       {/* Users Table Card */}
       <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="overflow-x-auto hidden md:block">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               <tr>
@@ -156,6 +157,69 @@ export default function AdminUsersPage() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards View */}
+        <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800 p-2">
+          {filtered.map((u) => (
+            <div key={u.id} className="p-3.5 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  {u.avatar_url ? (
+                    <img src={u.avatar_url} alt={u.full_name} className="w-9 h-9 rounded-xl object-cover" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white font-bold flex items-center justify-center text-xs">
+                      {u.full_name.charAt(0)}
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">{u.full_name}</h4>
+                    <p className="text-[10px] text-slate-400 font-mono truncate">{u.email}</p>
+                  </div>
+                </div>
+
+                <div>
+                  {u.role === 'admin' ? (
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                      Admin
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                      Student
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2 pt-1 text-[11px] text-slate-500">
+                <span>{u.program || 'General Program'} (Sem {u.semester || 1})</span>
+                {u.is_suspended ? (
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300">
+                    Suspended
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                    Active
+                  </span>
+                )}
+              </div>
+
+              {u.role !== 'admin' && (
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    onClick={() => handleToggleSuspend(u.id)}
+                    className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition text-center ${
+                      u.is_suspended
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        : 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/50 dark:text-red-300'
+                    }`}
+                  >
+                    {u.is_suspended ? 'Restore Student Account' : 'Suspend Student Account'}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 

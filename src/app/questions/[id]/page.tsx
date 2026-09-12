@@ -152,7 +152,7 @@ export default function QuestionDetailPage() {
       </div>
 
       {/* 1. MAIN QUESTION CARD */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
+      <div className="p-4 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
         
         {/* Header Tags & Metadata */}
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -212,7 +212,7 @@ export default function QuestionDetailPage() {
         {/* Action Controls & Author Info */}
         <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={handleVoteQuestion}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition ${
@@ -290,7 +290,7 @@ export default function QuestionDetailPage() {
         {sortedAnswers.map((ans) => (
           <div
             key={ans.id}
-            className={`p-6 rounded-3xl border transition ${
+            className={`p-4 sm:p-6 rounded-3xl border transition ${
               ans.is_accepted
                 ? 'bg-emerald-50/20 dark:bg-emerald-950/10 border-emerald-500/50 shadow-sm ring-1 ring-emerald-500/20'
                 : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-sm'
@@ -304,7 +304,7 @@ export default function QuestionDetailPage() {
               </div>
             )}
 
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3 sm:gap-4">
               
               {/* Upvote Answer Button */}
               <div className="flex flex-col items-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 shrink-0">
@@ -330,7 +330,7 @@ export default function QuestionDetailPage() {
                 {/* Answer Author and Accept Trigger */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
                   
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {/* Mark as accepted button for question author */}
                     {isAuthor && !ans.is_accepted && (
                       <button

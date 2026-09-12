@@ -66,10 +66,10 @@ export default function AdminReportsPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold overflow-x-auto w-full sm:w-auto">
             <button
               onClick={() => setFilterStatus('pending')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-lg transition shrink-0 ${
                 filterStatus === 'pending' ? 'bg-white dark:bg-slate-900 text-red-600 shadow-xs' : 'text-slate-500'
               }`}
             >
@@ -77,7 +77,7 @@ export default function AdminReportsPage() {
             </button>
             <button
               onClick={() => setFilterStatus('resolved')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-lg transition shrink-0 ${
                 filterStatus === 'resolved' ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-xs' : 'text-slate-500'
               }`}
             >
@@ -85,7 +85,7 @@ export default function AdminReportsPage() {
             </button>
             <button
               onClick={() => setFilterStatus('dismissed')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-lg transition shrink-0 ${
                 filterStatus === 'dismissed' ? 'bg-white dark:bg-slate-900 text-slate-700 shadow-xs' : 'text-slate-500'
               }`}
             >
@@ -107,15 +107,15 @@ export default function AdminReportsPage() {
           {filtered.map((report) => (
             <div
               key={report.id}
-              className={`p-6 rounded-3xl border transition shadow-sm space-y-4 ${
+              className={`p-5 sm:p-6 rounded-3xl border transition shadow-sm space-y-4 ${
                 report.status === 'pending'
                   ? 'bg-white dark:bg-slate-900 border-red-200/80 dark:border-red-950/60 ring-1 ring-red-500/20'
                   : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 opacity-80'
               }`}
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
                       {report.item_title || `${report.item_type.toUpperCase()} #${report.item_id}`}
                     </span>
@@ -133,14 +133,14 @@ export default function AdminReportsPage() {
                   </p>
                 </div>
 
-                <div className="text-right text-[11px] text-slate-400 shrink-0">
+                <div className="text-left sm:text-right text-[11px] text-slate-400 shrink-0">
                   <span>Reported by {report.reporter_name}</span>
                   <span className="block">{new Date(report.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
 
               {/* Status and Action Buttons */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                 <div>
                   {report.status === 'pending' ? (
                     <span className="font-bold text-red-600 flex items-center gap-1">
@@ -156,16 +156,16 @@ export default function AdminReportsPage() {
                 </div>
 
                 {report.status === 'pending' && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
                     <button
                       onClick={() => handleAction(report.id, 'dismissed')}
-                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 transition"
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 transition text-xs"
                     >
                       Dismiss Report
                     </button>
                     <button
                       onClick={() => handleAction(report.id, 'resolved', 'Flagged content removed')}
-                      className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold transition shadow-xs"
+                      className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold transition shadow-xs text-xs"
                     >
                       Resolve & Remove Content
                     </button>

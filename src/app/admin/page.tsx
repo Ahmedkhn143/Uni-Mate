@@ -125,7 +125,7 @@ export default function AdminDashboardPage() {
       )}
 
       {/* 1. EXECUTIVE ADMIN CONSOLE HERO */}
-      <div className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 text-white shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 p-5 sm:p-8 text-white shadow-2xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -221,7 +221,7 @@ export default function AdminDashboardPage() {
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
         
         {/* Tab Header Bar */}
-        <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-6 pt-4 gap-4 overflow-x-auto">
+        <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 pt-4 gap-2 sm:gap-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab('moderation')}
             className={`pb-3 text-xs font-bold flex items-center gap-2 border-b-2 transition shrink-0 ${
@@ -278,7 +278,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Tab Body */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           
           {/* TAB 1: MODERATION QUEUE */}
           {activeTab === 'moderation' && (
@@ -331,7 +331,7 @@ export default function AdminDashboardPage() {
                       </div>
 
                       {r.status === 'pending' ? (
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
                           <button
                             onClick={() => handleResolveReport(r.id, 'resolved')}
                             className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 transition shadow-xs"
@@ -405,7 +405,7 @@ export default function AdminDashboardPage() {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
                         <button
                           onClick={() => handlePaperStatus(paper.id, 'approved')}
                           className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
@@ -570,7 +570,7 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <Link
             href="/admin/settings"
             className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition flex items-center gap-1.5"

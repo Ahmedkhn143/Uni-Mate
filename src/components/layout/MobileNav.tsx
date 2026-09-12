@@ -34,7 +34,7 @@ export function MobileNav() {
         {/* Admin Action Sheet */}
         {sheetOpen && (
           <div className="fixed inset-0 z-50 md:hidden bg-black/60 backdrop-blur-xs flex flex-col justify-end p-4 animate-in fade-in duration-150">
-            <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 space-y-3 shadow-2xl">
+            <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 space-y-3 shadow-2xl max-h-[85vh] overflow-y-auto">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-amber-400" />
@@ -161,7 +161,7 @@ export function MobileNav() {
       {/* Mobile Floating Action Sheet */}
       {sheetOpen && (
         <div className="fixed inset-0 z-50 md:hidden bg-black/60 backdrop-blur-xs flex flex-col justify-end p-4 animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-3 shadow-2xl">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-3 shadow-2xl max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Create New Campus Post</h3>
               <button 

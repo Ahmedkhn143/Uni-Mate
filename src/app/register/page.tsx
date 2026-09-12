@@ -249,7 +249,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative overflow-hidden transition-colors">
+    <div className="min-h-screen flex items-center justify-center py-16 px-3 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative overflow-hidden transition-colors">
       
       {/* Top Header Bar with Home link & Theme Toggle */}
       <div className="fixed top-4 left-4 right-4 max-w-5xl mx-auto flex items-center justify-between z-20 pointer-events-auto">
@@ -313,7 +313,7 @@ export default function RegisterPage() {
       )}
 
       {/* Main Registration Card */}
-      <div className="max-w-xl w-full bg-white/95 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-7 sm:p-9 rounded-3xl shadow-xl dark:shadow-2xl backdrop-blur-xl space-y-6 transition-colors">
+      <div className="max-w-xl w-full bg-white/95 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-5 sm:p-8 rounded-3xl shadow-xl dark:shadow-2xl backdrop-blur-xl space-y-6 transition-colors">
         
         {/* Brand Header */}
         <div className="text-center space-y-2">
@@ -585,7 +585,7 @@ export default function RegisterPage() {
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 text-center">
                 Enter 6-Digit Code
               </label>
-              <div className="flex items-center justify-center gap-2 sm:gap-3">
+              <div className="flex items-center justify-center gap-1.5 sm:gap-3">
                 {otpDigits.map((digit, idx) => (
                   <input
                     key={idx}
@@ -596,7 +596,7 @@ export default function RegisterPage() {
                     value={digit}
                     onChange={(e) => handleOtpChange(idx, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                    className="w-11 h-12 text-center text-lg font-bold font-mono rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25 focus:outline-none transition"
+                    className="w-9 sm:w-11 h-11 sm:h-12 text-center text-base sm:text-lg font-bold font-mono rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25 focus:outline-none transition"
                   />
                 ))}
               </div>

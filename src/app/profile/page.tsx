@@ -58,10 +58,10 @@ export default function ProfilePage() {
     <div className="max-w-3xl mx-auto space-y-6">
       
       {/* Profile Header Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
+      <div className="p-4 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-md space-y-6">
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
             {user.avatar_url ? (
               <img src={user.avatar_url} alt={user.full_name} className="w-20 h-20 rounded-2xl object-cover ring-4 ring-indigo-500/20 shadow-md" />
             ) : (
@@ -183,8 +183,8 @@ export default function ProfilePage() {
         )}
 
         {/* Contribution Metrics */}
-        <div className="grid grid-cols-3 gap-3 pt-2 text-center">
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 pt-2 text-center">
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
             <div className="text-xl font-black text-indigo-600 dark:text-indigo-400">{questions.length}</div>
             <div className="text-[11px] text-slate-500 font-medium mt-0.5">Questions Asked</div>
           </div>

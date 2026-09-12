@@ -256,7 +256,7 @@ export default function PastPapersPage() {
               </div>
 
               {/* Action Buttons & Metadata */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs text-slate-400">
                 <div className="flex items-center gap-2">
                   <span>{paper.file_size_kb} KB PDF</span>
                   <span>•</span>
@@ -299,11 +299,11 @@ export default function PastPapersPage() {
 
       {/* PDF PREVIEW MODAL */}
       {previewPaper && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full h-[85vh] flex flex-col border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
             
             {/* Modal Header */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+            <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 gap-2">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                   {previewPaper.title}

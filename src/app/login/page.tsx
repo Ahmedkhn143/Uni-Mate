@@ -12,9 +12,11 @@ import {
   Eye, 
   EyeOff, 
   CheckCircle2,
-  ArrowLeft
+  ArrowLeft,
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth, PERMANENT_ACCOUNTS } from '@/lib/auth-context';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 function LoginForm() {
@@ -30,6 +32,18 @@ function LoginForm() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const fillAdminCredentials = () => {
+    setEmail(PERMANENT_ACCOUNTS.ADMIN.email);
+    setPassword(PERMANENT_ACCOUNTS.ADMIN.password);
+    setError('');
+  };
+
+  const fillStudentCredentials = () => {
+    setEmail(PERMANENT_ACCOUNTS.STUDENT.email);
+    setPassword(PERMANENT_ACCOUNTS.STUDENT.password);
+    setError('');
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +84,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative overflow-hidden transition-colors">
+    <div className="min-h-screen flex flex-col justify-center items-center p-3 sm:p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative overflow-hidden transition-colors">
       
       {/* Top Header Bar with Home link & Theme Toggle */}
       <div className="fixed top-4 left-4 right-4 max-w-5xl mx-auto flex items-center justify-between z-20 pointer-events-auto">
@@ -91,16 +105,16 @@ function LoginForm() {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[350px] bg-gradient-to-tr from-indigo-600/10 via-purple-600/10 to-emerald-500/10 blur-3xl pointer-events-none -z-10 rounded-full" />
 
       {/* Login Card */}
-      <div className="w-full max-w-md bg-white/95 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-7 sm:p-9 shadow-xl dark:shadow-2xl backdrop-blur-xl relative z-10 space-y-6 transition-colors">
+      <div className="w-full max-w-md bg-white/95 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-8 shadow-xl dark:shadow-2xl backdrop-blur-xl relative z-10 space-y-5 transition-colors">
         
         {/* Brand Header */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-1.5">
           <Link href="/" className="inline-flex items-center justify-center gap-2 group mb-1">
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-indigo-600/25 group-hover:scale-105 transition-transform">
               <GraduationCap className="w-6 h-6" />
             </div>
           </Link>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             Sign In to UniMate
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -108,15 +122,52 @@ function LoginForm() {
           </p>
         </div>
 
+        {/* 1-Click Demo Accounts Quick-Fill Card */}
+        <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              Demo Accounts Quick-Fill
+            </span>
+            <span className="text-[9px] text-slate-400 font-medium">Click to populate</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={fillAdminCredentials}
+              className="p-2 rounded-xl text-left bg-white dark:bg-slate-900 border border-amber-300/80 dark:border-amber-700/60 hover:border-amber-500 hover:shadow-xs transition group cursor-pointer"
+            >
+              <div className="flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="truncate">Admin Demo</span>
+              </div>
+              <p className="text-[9px] text-slate-400 font-mono truncate mt-0.5">admin@kfueit.edu.pk</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={fillStudentCredentials}
+              className="p-2 rounded-xl text-left bg-white dark:bg-slate-900 border border-indigo-300/80 dark:border-indigo-700/60 hover:border-indigo-500 hover:shadow-xs transition group cursor-pointer"
+            >
+              <div className="flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-300">
+                <GraduationCap className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                <span className="truncate">Student Demo</span>
+              </div>
+              <p className="text-[9px] text-slate-400 font-mono truncate mt-0.5">student@kfueit.edu.pk</p>
+            </button>
+          </div>
+        </div>
+
         {/* Domain Notice */}
-        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/70 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[11px] font-medium">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/70 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[11px] font-medium">
           <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
           <span>Official University Portal for <strong className="text-slate-900 dark:text-white font-bold">@kfueit.edu.pk</strong></span>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-200 text-xs flex items-center gap-2.5 animate-in fade-in duration-150">
+          <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-200 text-xs flex items-center gap-2.5 animate-in fade-in duration-150">
             <AlertCircle className="w-4 h-4 shrink-0 text-red-500 dark:text-red-400" />
             <span className="leading-snug">{error}</span>
           </div>

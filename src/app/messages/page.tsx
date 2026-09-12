@@ -12,7 +12,8 @@ import {
   Clock, 
   AlertTriangle,
   CheckCircle2,
-  Plus
+  Plus,
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -112,7 +113,7 @@ function MessagesContent() {
     <div className="h-[calc(100vh-8rem)] flex flex-col md:flex-row rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xl overflow-hidden">
       
       {/* 1. LEFT SIDEBAR: CONVERSATIONS LIST */}
-      <div className="w-full md:w-80 border-r border-slate-200/80 dark:border-slate-800 flex flex-col shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+      <div className={`w-full md:w-80 border-r border-slate-200/80 dark:border-slate-800 flex-col shrink-0 bg-slate-50/50 dark:bg-slate-900/50 ${activeConvId ? 'hidden md:flex' : 'flex'}`}>
         
         {/* Header */}
         <div className="p-4 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
@@ -197,35 +198,43 @@ function MessagesContent() {
       </div>
 
       {/* 2. RIGHT CHAT WINDOW */}
-      <div className="flex-1 flex flex-col bg-white dark:bg-slate-900">
+      <div className={`flex-1 flex-col bg-white dark:bg-slate-900 ${activeConvId ? 'flex' : 'hidden md:flex'}`}>
         {activeConversation && otherParticipant ? (
           <>
             {/* Chat Top Header */}
-            <div className="p-4 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
-              <div className="flex items-center gap-3">
+            <div className="p-3.5 sm:p-4 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveConvId(null)}
+                  className="md:hidden p-1.5 -ml-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition"
+                  title="Back to conversations"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
                 {otherParticipant.avatar_url ? (
-                  <img src={otherParticipant.avatar_url} alt={otherParticipant.full_name} className="w-9 h-9 rounded-xl object-cover" />
+                  <img src={otherParticipant.avatar_url} alt={otherParticipant.full_name} className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover shrink-0" />
                 ) : (
-                  <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
                     {otherParticipant.full_name.charAt(0)}
                   </div>
                 )}
-                <div>
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                    {otherParticipant.full_name}
+                <div className="min-w-0">
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">
+                    <span className="truncate">{otherParticipant.full_name}</span>
                     {otherParticipant.role === 'admin' && (
-                      <span className="text-[10px] font-bold text-amber-600 flex items-center gap-0.5">
+                      <span className="text-[9px] sm:text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-0.5 shrink-0">
                         <ShieldCheck className="w-3 h-3" /> Moderator
                       </span>
                     )}
                   </h3>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[10px] text-slate-400 truncate">
                     {otherParticipant.department_name || otherParticipant.program}
                   </p>
                 </div>
               </div>
 
-              <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+              <div className="text-[11px] text-slate-400 flex items-center gap-1.5 shrink-0">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 <span>Active</span>
               </div>
