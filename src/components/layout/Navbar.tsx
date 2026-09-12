@@ -57,6 +57,202 @@ export function Navbar() {
 
   const isPublicLanding = pathname === '/';
 
+  if (isPublicLanding) {
+    return (
+      <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 gap-4">
+            
+            {/* Brand Logo */}
+            <div className="flex items-center gap-3">
+              <Link href="/" className="flex items-center gap-2.5 group">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 to-indigo-900 dark:from-indigo-400 dark:to-indigo-200 bg-clip-text text-transparent">
+                    UniMate
+                  </span>
+                  <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded border border-indigo-200/70 dark:border-indigo-800">
+                    KFUEIT Portal
+                  </span>
+                </div>
+              </Link>
+            </div>
+
+            {/* Public Center Links */}
+            <nav className="hidden md:flex items-center gap-6">
+              <Link
+                href="/#features"
+                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+              >
+                Features
+              </Link>
+              <Link
+                href="/questions"
+                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+              >
+                Q&A Forum
+              </Link>
+              <Link
+                href="/past-papers"
+                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+              >
+                Past Papers
+              </Link>
+              <Link
+                href="/lost-and-found"
+                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+              >
+                Lost & Found
+              </Link>
+              <Link
+                href="/scholarships"
+                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+              >
+                Scholarships
+              </Link>
+            </nav>
+
+            {/* Right Controls */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {user ? (
+                <div className="flex items-center gap-2.5">
+                  <Link
+                    href={isAdmin ? '/admin' : '/dashboard'}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-600/20 transition-all hover:scale-[1.02]"
+                  >
+                    <span>{isAdmin ? 'Admin Console' : 'Go to Dashboard'}</span>
+                    <span>→</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      logout();
+                      router.push('/login');
+                    }}
+                    className="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Link
+                    href="/login"
+                    className="px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/20 transition-all hover:scale-[1.02]"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Join UniMate</span>
+                  </Link>
+                </div>
+              )}
+
+              {/* Mobile menu trigger */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                aria-label="Toggle Navigation"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Landing Mobile Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pt-4 pb-6 space-y-3">
+            <div className="grid grid-cols-1 gap-2">
+              <Link
+                href="/#features"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Features
+              </Link>
+              <Link
+                href="/questions"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Q&A Forum
+              </Link>
+              <Link
+                href="/past-papers"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Past Papers
+              </Link>
+              <Link
+                href="/lost-and-found"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Lost & Found
+              </Link>
+              <Link
+                href="/scholarships"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Scholarships
+              </Link>
+            </div>
+
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
+              {user ? (
+                <>
+                  <Link
+                    href={isAdmin ? '/admin' : '/dashboard'}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {isAdmin ? 'Admin Console' : 'Go to Dashboard'}
+                  </Link>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                      router.push('/login');
+                    }}
+                    className="w-full text-center py-2 text-xs font-medium text-red-600 dark:text-red-400"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 px-4 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    Join UniMate
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </header>
+    );
+  }
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

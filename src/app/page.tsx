@@ -138,7 +138,7 @@ export default function LandingPage() {
       </section>
 
       {/* 2. WHAT IS UNIMATE? */}
-      <section className="w-full py-20 bg-white dark:bg-slate-900">
+      <section id="features" className="w-full py-20 bg-white dark:bg-slate-900 scroll-mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">

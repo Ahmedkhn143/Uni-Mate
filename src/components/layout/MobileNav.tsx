@@ -23,7 +23,7 @@ export function MobileNav() {
   const { user, isAdmin } = useAuth();
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  if (!user) return null;
+  if (!user || pathname === '/') return null;
 
   // -------------------------------------------------------------
   // ADMIN MOBILE NAVIGATION

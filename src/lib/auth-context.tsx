@@ -64,12 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Default to student demo profile
-    const defaultStudent = profiles.find((p) => p.email === PERMANENT_ACCOUNTS.STUDENT.email || p.email === 'alex.rivera@kfueit.edu.pk') || profiles[1] || INITIAL_PROFILES[1];
-    setUser(defaultStudent);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('unimate_active_user_id', defaultStudent.id);
-    }
+    // No stored user -> visitor remains unauthenticated (null)
+    setUser(null);
     setIsLoading(false);
   }, []);
 
