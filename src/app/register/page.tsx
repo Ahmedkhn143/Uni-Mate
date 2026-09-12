@@ -24,6 +24,7 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
 import { Department } from '@/types/database';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -248,14 +249,29 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-950 text-slate-100 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative overflow-hidden transition-colors">
       
+      {/* Top Header Bar with Home link & Theme Toggle */}
+      <div className="fixed top-4 left-4 right-4 max-w-5xl mx-auto flex items-center justify-between z-20 pointer-events-auto">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-sm backdrop-blur-md transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Home</span>
+        </Link>
+
+        <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/80 p-1 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
+          <ThemeToggle />
+        </div>
+      </div>
+
       {/* Ambient glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-gradient-to-tr from-indigo-600/15 via-purple-600/15 to-emerald-500/15 blur-3xl pointer-events-none -z-10 rounded-full" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-gradient-to-tr from-indigo-600/10 via-purple-600/10 to-emerald-500/10 blur-3xl pointer-events-none -z-10 rounded-full" />
 
       {/* Simulated Incoming University Email Notification */}
       {showSimulatedEmailToast && (
-        <div className="fixed top-5 right-5 z-50 max-w-md w-full bg-slate-900 border-2 border-indigo-500/60 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-top-4 duration-300 text-slate-100">
+        <div className="fixed top-5 right-5 z-50 max-w-md w-full bg-white dark:bg-slate-900 border-2 border-indigo-500 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-top-4 duration-300 text-slate-900 dark:text-slate-100">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
@@ -263,11 +279,11 @@ export default function RegisterPage() {
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white">KFUEIT University Mail</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">New Message</span>
+                  <span className="text-xs font-bold text-slate-900 dark:text-white">KFUEIT University Mail</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">New Message</span>
                 </div>
-                <p className="text-[11px] text-slate-300">
-                  Your Student Registration Code is: <strong className="font-mono text-indigo-300 text-sm tracking-widest">{generatedOtp}</strong>
+                <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                  Your Student Registration Code is: <strong className="font-mono text-indigo-600 dark:text-indigo-400 text-sm tracking-widest">{generatedOtp}</strong>
                 </p>
                 <p className="text-[10px] text-slate-400">
                   Sent to: <span className="font-mono">{email}</span>
@@ -276,39 +292,40 @@ export default function RegisterPage() {
             </div>
             <button
               onClick={() => setShowSimulatedEmailToast(false)}
-              className="text-slate-400 hover:text-white p-1"
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between">
+          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <button
               type="button"
               onClick={handleAutoFillCode}
-              className="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition"
+              className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 transition"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               Click here to Auto-fill Code ({generatedOtp})
             </button>
-            <span className="text-[10px] text-slate-500">Exp: 10 mins</span>
+            <span className="text-[10px] text-slate-400">Exp: 10 mins</span>
           </div>
         </div>
       )}
 
-      <div className="max-w-xl w-full bg-slate-900/90 border border-slate-800 p-7 sm:p-9 rounded-3xl shadow-2xl backdrop-blur-xl space-y-6">
+      {/* Main Registration Card */}
+      <div className="max-w-xl w-full bg-white/95 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-7 sm:p-9 rounded-3xl shadow-xl dark:shadow-2xl backdrop-blur-xl space-y-6 transition-colors">
         
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center justify-center gap-2 group mb-1">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30 group-hover:scale-105 transition-transform">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-indigo-600/25 group-hover:scale-105 transition-transform">
               <GraduationCap className="w-6 h-6" />
             </div>
           </Link>
-          <h1 className="text-2xl font-extrabold text-white">
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
             {step === 'form' ? 'Create Student Account' : 'Confirm University Email'}
           </h1>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {step === 'form' 
               ? `Join UniMate using your university domain (@kfueit.edu.pk).`
               : `Enter the 6-digit confirmation code sent to ${email}`}
@@ -317,8 +334,8 @@ export default function RegisterPage() {
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3.5 rounded-xl bg-red-950/50 border border-red-900/60 text-red-200 text-xs flex items-center gap-2.5 animate-in fade-in duration-150">
-            <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+          <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-200 text-xs flex items-center gap-2.5 animate-in fade-in duration-150">
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-500 dark:text-red-400" />
             <span className="leading-snug">{error}</span>
           </div>
         )}
@@ -328,21 +345,21 @@ export default function RegisterPage() {
           <form onSubmit={handleInitiateVerification} className="space-y-4">
             
             {/* Optional Profile Picture Selector */}
-            <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 flex items-center justify-between">
+            <div className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="relative w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
+                <div className="relative w-12 h-12 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
                   {avatarPreview ? (
                     <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
-                    <Camera className="w-5 h-5 text-slate-400" />
+                    <Camera className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                   )}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-white">Profile Picture</span>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">OPTIONAL</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-white">Profile Picture</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">OPTIONAL</span>
                   </div>
-                  <p className="text-[11px] text-slate-400">Upload your student photo or leave default</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Upload your student photo or leave default</p>
                 </div>
               </div>
 
@@ -351,7 +368,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={handleRemoveImage}
-                    className="p-1.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-950/40 rounded-lg transition"
+                    className="p-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition"
                     title="Remove Photo"
                   >
                     <X className="w-4 h-4" />
@@ -360,7 +377,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-3 py-1.5 text-xs font-semibold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-950/40 rounded-lg transition border border-indigo-800/40 flex items-center gap-1.5"
+                    className="px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition border border-indigo-200 dark:border-indigo-800/60 flex items-center gap-1.5"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     <span>Choose</span>
@@ -379,35 +396,35 @@ export default function RegisterPage() {
             {/* Name & University Email */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <User className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="e.g. Ahmad Khan"
                     required
-                    className="w-full pl-10 pr-3 py-2.5 text-xs rounded-xl border border-slate-800 bg-slate-950/60 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                    className="w-full pl-10 pr-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   University Email
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="student@kfueit.edu.pk"
                     required
-                    className="w-full pl-10 pr-3 py-2.5 text-xs rounded-xl border border-slate-800 bg-slate-950/60 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                    className="w-full pl-10 pr-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
                   />
                 </div>
               </div>
@@ -416,16 +433,16 @@ export default function RegisterPage() {
             {/* Department & Program */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   Department
                 </label>
                 <select
                   value={departmentId}
                   onChange={(e) => setDepartmentId(e.target.value)}
-                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-800 bg-slate-950/60 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
                 >
                   {departments.map((d) => (
-                    <option key={d.id} value={d.id} className="bg-slate-900 text-white">
+                    <option key={d.id} value={d.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                       {d.name} ({d.code})
                     </option>
                   ))}
@@ -433,7 +450,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   Degree Program
                 </label>
                 <input
@@ -442,7 +459,7 @@ export default function RegisterPage() {
                   onChange={(e) => setProgram(e.target.value)}
                   placeholder="e.g. BS Computer Science"
                   required
-                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-800 bg-slate-950/60 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
                 />
               </div>
             </div>
@@ -450,16 +467,16 @@ export default function RegisterPage() {
             {/* Semester & Student ID */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   Current Semester
                 </label>
                 <select
                   value={semester}
                   onChange={(e) => setSemester(Number(e.target.value))}
-                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-800 bg-slate-950/60 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
                 >
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                    <option key={num} value={num} className="bg-slate-900 text-white">
+                    <option key={num} value={num} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                       Semester {num}
                     </option>
                   ))}
@@ -467,15 +484,15 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-300">
-                  Student Roll / ID Number (Optional)
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Student Roll / ID (Optional)
                 </label>
                 <input
                   type="text"
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value)}
                   placeholder="e.g. CS24-102"
-                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-800 bg-slate-950/60 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
                 />
               </div>
             </div>
@@ -483,35 +500,35 @@ export default function RegisterPage() {
             {/* Password & Confirm */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min 6 characters"
                     required
-                    className="w-full pl-10 pr-3 py-2.5 text-xs rounded-xl border border-slate-800 bg-slate-950/60 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                    className="w-full pl-10 pr-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm password"
                     required
-                    className="w-full pl-10 pr-3 py-2.5 text-xs rounded-xl border border-slate-800 bg-slate-950/60 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                    className="w-full pl-10 pr-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
                   />
                 </div>
               </div>
@@ -542,20 +559,20 @@ export default function RegisterPage() {
           /* STEP 2: EMAIL OTP CONFIRMATION MODAL */
           <form onSubmit={handleCompleteRegistration} className="space-y-5">
             
-            <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-900/60 space-y-2">
-              <div className="flex items-center gap-2 text-xs font-bold text-indigo-300">
-                <KeyRound className="w-4 h-4 text-amber-400" />
+            <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                <KeyRound className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                 <span>Verification Code Sent</span>
               </div>
-              <p className="text-xs text-slate-300">
-                We sent a 6-digit confirmation code to <strong className="text-white font-mono">{email}</strong> to verify your university identity.
+              <p className="text-xs text-slate-600 dark:text-slate-300">
+                We sent a 6-digit confirmation code to <strong className="text-slate-900 dark:text-white font-mono">{email}</strong> to verify your university identity.
               </p>
               {generatedOtp && (
                 <div className="pt-1">
                   <button
                     type="button"
                     onClick={handleAutoFillCode}
-                    className="text-[11px] text-amber-400 hover:text-amber-300 underline font-medium"
+                    className="text-[11px] text-amber-600 dark:text-amber-400 hover:underline font-medium"
                   >
                     Quick Auto-fill demo code: {generatedOtp}
                   </button>
@@ -565,7 +582,7 @@ export default function RegisterPage() {
 
             {/* 6 Digit Inputs */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-300 text-center">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 text-center">
                 Enter 6-Digit Code
               </label>
               <div className="flex items-center justify-center gap-2 sm:gap-3">
@@ -579,7 +596,7 @@ export default function RegisterPage() {
                     value={digit}
                     onChange={(e) => handleOtpChange(idx, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                    className="w-11 h-12 text-center text-lg font-bold font-mono rounded-xl border border-slate-800 bg-slate-950/80 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25 focus:outline-none transition"
+                    className="w-11 h-12 text-center text-lg font-bold font-mono rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25 focus:outline-none transition"
                   />
                 ))}
               </div>
@@ -605,11 +622,11 @@ export default function RegisterPage() {
                 )}
               </button>
 
-              <div className="flex items-center justify-between pt-2 text-xs text-slate-400">
+              <div className="flex items-center justify-between pt-2 text-xs text-slate-500 dark:text-slate-400">
                 <button
                   type="button"
                   onClick={() => setStep('form')}
-                  className="flex items-center gap-1.5 hover:text-slate-200 transition"
+                  className="flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-slate-200 transition"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Edit Details</span>
@@ -619,7 +636,7 @@ export default function RegisterPage() {
                   type="button"
                   onClick={handleResendCode}
                   disabled={resendTimer > 0}
-                  className="flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 disabled:text-slate-600 transition"
+                  className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 hover:underline disabled:text-slate-400 dark:disabled:text-slate-600 transition"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>{resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend Code'}</span>
@@ -629,12 +646,19 @@ export default function RegisterPage() {
           </form>
         )}
 
-        {/* Footer Link to Login */}
-        <div className="text-center text-xs text-slate-400 pt-3 border-t border-slate-800">
-          Already have a student account?{' '}
-          <Link href="/login" className="font-bold text-indigo-400 hover:text-indigo-300 transition">
-            Sign In here
-          </Link>
+        {/* Footer Link to Login & Theme Switch */}
+        <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+          <div>
+            Already have a student account?{' '}
+            <Link href="/login" className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline transition">
+              Sign In here
+            </Link>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 pt-1 text-[11px] text-slate-500 dark:text-slate-400">
+            <span>Appearance:</span>
+            <ThemeToggle showLabel className="py-1 px-2.5 bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60" />
+          </div>
         </div>
 
       </div>

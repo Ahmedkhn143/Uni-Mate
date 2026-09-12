@@ -11,11 +11,11 @@ import {
   Mail, 
   Eye, 
   EyeOff, 
-  ShieldCheck,
   CheckCircle2,
-  Sparkles
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 function LoginForm() {
   const router = useRouter();
@@ -70,38 +70,54 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-950 text-slate-100 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative overflow-hidden transition-colors">
       
-      {/* Ambient background glows */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[350px] bg-gradient-to-tr from-indigo-600/15 via-purple-600/15 to-emerald-500/15 blur-3xl pointer-events-none -z-10 rounded-full" />
+      {/* Top Header Bar with Home link & Theme Toggle */}
+      <div className="fixed top-4 left-4 right-4 max-w-5xl mx-auto flex items-center justify-between z-20 pointer-events-auto">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 shadow-sm backdrop-blur-md transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Home</span>
+        </Link>
 
-      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-7 sm:p-9 shadow-2xl backdrop-blur-xl relative z-10 space-y-6">
+        <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/80 p-1 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm backdrop-blur-md">
+          <ThemeToggle />
+        </div>
+      </div>
+
+      {/* Ambient background glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[350px] bg-gradient-to-tr from-indigo-600/10 via-purple-600/10 to-emerald-500/10 blur-3xl pointer-events-none -z-10 rounded-full" />
+
+      {/* Login Card */}
+      <div className="w-full max-w-md bg-white/95 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-7 sm:p-9 shadow-xl dark:shadow-2xl backdrop-blur-xl relative z-10 space-y-6 transition-colors">
         
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center justify-center gap-2 group mb-1">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30 group-hover:scale-105 transition-transform">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-indigo-600/25 group-hover:scale-105 transition-transform">
               <GraduationCap className="w-6 h-6" />
             </div>
           </Link>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white">
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             Sign In to UniMate
           </h1>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Enter your verified KFUEIT credentials to access your campus account.
           </p>
         </div>
 
         {/* Domain Notice */}
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-950/50 border border-indigo-900/60 text-indigo-300 text-[11px] font-medium">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>Official University Portal for <strong className="text-white">@kfueit.edu.pk</strong></span>
+        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/70 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[11px] font-medium">
+          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+          <span>Official University Portal for <strong className="text-slate-900 dark:text-white font-bold">@kfueit.edu.pk</strong></span>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3.5 rounded-xl bg-red-950/50 border border-red-900/60 text-red-200 text-xs flex items-center gap-2.5 animate-in fade-in duration-150">
-            <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+          <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-200 text-xs flex items-center gap-2.5 animate-in fade-in duration-150">
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-500 dark:text-red-400" />
             <span className="leading-snug">{error}</span>
           </div>
         )}
@@ -111,11 +127,11 @@ function LoginForm() {
           
           {/* Email Input */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-300">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
               University Email Address
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Mail className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="email"
                 value={email}
@@ -123,7 +139,7 @@ function LoginForm() {
                 placeholder="student@kfueit.edu.pk"
                 required
                 autoComplete="email"
-                className="w-full pl-10 pr-3.5 py-2.5 text-xs rounded-xl border border-slate-800 bg-slate-950/60 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                className="w-full pl-10 pr-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
               />
             </div>
           </div>
@@ -131,18 +147,18 @@ function LoginForm() {
           {/* Password Input */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-slate-300">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                 Password
               </label>
               <Link 
                 href="/forgot-password"
-                className="text-[11px] text-indigo-400 hover:text-indigo-300 font-medium transition"
+                className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-medium transition"
               >
                 Forgot Password?
               </Link>
             </div>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Lock className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
@@ -150,12 +166,12 @@ function LoginForm() {
                 placeholder="Enter your account password"
                 required
                 autoComplete="current-password"
-                className="w-full pl-10 pr-10 py-2.5 text-xs rounded-xl border border-slate-800 bg-slate-950/60 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                className="w-full pl-10 pr-10 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -165,12 +181,12 @@ function LoginForm() {
 
           {/* Remember Me */}
           <div className="flex items-center justify-between pt-1">
-            <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-400">
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-400">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500/30"
+                className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-indigo-600 focus:ring-indigo-500/30"
               />
               <span>Remember this device</span>
             </label>
@@ -196,24 +212,21 @@ function LoginForm() {
           </button>
         </form>
 
-        {/* Footer Link to Register */}
-        <div className="pt-4 border-t border-slate-800 text-center space-y-2">
-          <p className="text-xs text-slate-400">
+        {/* Footer Link to Register & Theme Mode Switch */}
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-center space-y-3">
+          <p className="text-xs text-slate-600 dark:text-slate-400">
             Don't have a student account?{' '}
             <Link 
               href="/register" 
-              className="font-bold text-indigo-400 hover:text-indigo-300 transition"
+              className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline transition"
             >
               Register with KFUEIT Email →
             </Link>
           </p>
-          <div className="pt-2">
-            <Link 
-              href="/"
-              className="text-[11px] text-slate-500 hover:text-slate-400 transition"
-            >
-              ← Back to Campus Portal Homepage
-            </Link>
+
+          <div className="flex items-center justify-center gap-2 pt-1 text-[11px] text-slate-500 dark:text-slate-400">
+            <span>Appearance:</span>
+            <ThemeToggle showLabel className="py-1 px-2.5 bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/60" />
           </div>
         </div>
 
@@ -224,7 +237,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white text-xs">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-700 dark:text-slate-300 text-xs">Loading...</div>}>
       <LoginForm />
     </Suspense>
   );

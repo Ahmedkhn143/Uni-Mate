@@ -21,17 +21,23 @@ import {
   MapPin,
   ExternalLink,
   ShieldAlert,
-  ShieldCheck
+  ShieldCheck,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
 import { Question, LostFoundItem, PastPaper, Scholarship, Post, Notification } from '@/types/database';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { useTheme } from '@/lib/theme-context';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isStudent, isAdmin } = useAuth();
+  const { user, isStudent, isAdmin, isLoading } = useAuth();
+  const { theme, isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
+    if (isLoading) return;
     if (!user) {
       router.push('/login');
       return;
@@ -39,7 +45,7 @@ export default function DashboardPage() {
     if (user.role === 'admin') {
       router.push('/admin');
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
   
   const [questions, setQuestions] = useState<Question[]>([]);
   const [lostFound, setLostFound] = useState<LostFoundItem[]>([]);
@@ -66,6 +72,15 @@ export default function DashboardPage() {
     loadData();
     return UniMateStore.subscribe(loadData);
   }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="py-24 flex flex-col items-center justify-center space-y-3">
+        <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-slate-500 dark:text-slate-400">Loading student workspace...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -101,9 +116,20 @@ export default function DashboardPage() {
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-emerald-600 p-6 sm:p-8 text-white shadow-xl">
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-semibold text-white">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Campus Dashboard • {user.department_name || 'Academic Commons'}</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-semibold text-white">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Campus Dashboard • {user.department_name || 'Academic Commons'}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleTheme()}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 hover:bg-black/35 backdrop-blur-md text-[11px] font-semibold text-white transition cursor-pointer"
+                title="Toggle Light / Dark Mode"
+              >
+                {isDark ? <Sun className="w-3 h-3 text-amber-300" /> : <Moon className="w-3 h-3 text-indigo-300" />}
+                <span>{isDark ? 'Switch to Light' : 'Switch to Dark'}</span>
+              </button>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Welcome back, {user.full_name}! 👋
@@ -135,9 +161,15 @@ export default function DashboardPage() {
 
       {/* 2. QUICK ACTIONS BAR */}
       <div className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          Quick Actions
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Quick Actions
+          </h2>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">Theme:</span>
+            <ThemeToggle showLabel className="py-1 px-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs" />
+          </div>
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <Link
             href="/questions/ask"
