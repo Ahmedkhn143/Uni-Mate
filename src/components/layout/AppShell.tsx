@@ -12,10 +12,20 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user } = useAuth();
 
-  // Pages where sidebar should not appear (public or auth pages)
+  // Pages where navbar, footer, and sidebar must not appear
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password';
   const isLandingPage = pathname === '/';
   const shouldShowSidebar = user && !isAuthPage && !isLandingPage;
+
+  if (isAuthPage) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
+        <main className="w-full">
+          {children}
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
