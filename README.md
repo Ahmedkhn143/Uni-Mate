@@ -1,7 +1,9 @@
 # UniMate — Your University. Your Community.
 
 > **Connect. Learn. Share. Help.**
-> A production-ready full-stack university student community and academic resource platform built with Next.js App Router, TypeScript, Tailwind CSS, and Supabase.
+> A production-ready full-stack university student community and academic resource platform for **KFUEIT** built with Next.js App Router, TypeScript, Tailwind CSS, and Supabase.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAhmedkhn143%2FUni-Mate)
 
 ---
 
