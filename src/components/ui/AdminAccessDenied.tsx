@@ -53,19 +53,15 @@ export function AdminAccessDenied() {
         </div>
       </div>
 
-      {/* Permanent Admin Credentials Reminder */}
-      <div className="p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/30 text-left space-y-2">
+      {/* Faculty Clearance Notice */}
+      <div className="p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/30 text-left space-y-1.5">
         <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 text-xs font-bold">
           <Key className="w-4 h-4 text-amber-600 shrink-0" />
-          <span>Need to access the Administrator Portal?</span>
+          <span>University Administrative Clearance Required</span>
         </div>
         <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-          Log in using the official Permanent Administrator credentials:
+          Access to this console requires verified university faculty or dean authorization on the official <strong className="font-mono text-amber-700 dark:text-amber-300">@kfueit.edu.pk</strong> campus domain.
         </p>
-        <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-amber-200 dark:border-amber-900/60 font-mono text-xs space-y-1 text-slate-800 dark:text-slate-200">
-          <div>Email: <strong className="text-amber-700 dark:text-amber-300">{PERMANENT_ACCOUNTS.ADMIN.email}</strong></div>
-          <div>Password: <strong className="text-amber-700 dark:text-amber-300">{PERMANENT_ACCOUNTS.ADMIN.password}</strong></div>
-        </div>
       </div>
 
       {/* Action Navigation */}

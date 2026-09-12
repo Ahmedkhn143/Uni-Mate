@@ -262,7 +262,7 @@ function CreateLostFoundContent() {
               type="text"
               value={contactInfo}
               onChange={(e) => setContactInfo(e.target.value)}
-              placeholder="e.g. Message me on UniMate or alex@student.edu"
+              placeholder="e.g. Message me on UniMate or student@kfueit.edu.pk"
               required
               className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
             />

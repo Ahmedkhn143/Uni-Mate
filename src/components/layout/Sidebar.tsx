@@ -144,10 +144,10 @@ export function Sidebar() {
               </span>
             </div>
             <p className="text-[10px] text-slate-400 leading-relaxed font-mono truncate">
-              {PERMANENT_ACCOUNTS.ADMIN.email}
+              {user.email}
             </p>
             <span className="inline-block mt-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800/60">
-              Campus Administrator
+              KFUEIT Administrator
             </span>
           </div>
         </div>
@@ -211,7 +211,7 @@ export function Sidebar() {
             {user.program || 'Computer Science'} • Sem {user.semester || 4}
           </p>
           <span className="inline-block mt-1 text-[9px] font-semibold text-indigo-600 dark:text-indigo-400 font-mono">
-            {PERMANENT_ACCOUNTS.STUDENT.email}
+            {user.email}
           </span>
         </div>
       </div>

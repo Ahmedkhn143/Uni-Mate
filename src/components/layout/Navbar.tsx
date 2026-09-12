@@ -24,7 +24,7 @@ import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
 
 export function Navbar() {
-  const { user, isAdmin, logout, switchUser } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -296,49 +296,7 @@ export function Navbar() {
                         )}
                       </div>
 
-                      {/* Demo Quick Switcher */}
-                      <div className="p-3 border-t border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 space-y-1.5">
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-                          <span className="flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-indigo-500" />
-                            Switch Demo Account
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-1.5 text-xs">
-                          <button
-                            onClick={() => {
-                              switchUser('student');
-                              setUserDropdownOpen(false);
-                              router.push('/dashboard');
-                            }}
-                            className={`px-2.5 py-2 rounded-xl text-left font-bold transition ${
-                              user.role === 'student'
-                                ? 'bg-indigo-600 text-white shadow-xs'
-                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200/60 border border-slate-200 dark:border-slate-700'
-                            }`}
-                          >
-                            <div className="text-[11px]">Student</div>
-                            <div className="text-[9px] opacity-80 font-normal">Alex Rivera</div>
-                          </button>
-                          <button
-                            onClick={() => {
-                              switchUser('admin');
-                              setUserDropdownOpen(false);
-                              router.push('/admin');
-                            }}
-                            className={`px-2.5 py-2 rounded-xl text-left font-bold transition ${
-                              user.role === 'admin'
-                                ? 'bg-amber-600 text-white shadow-xs'
-                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200/60 border border-slate-200 dark:border-slate-700'
-                            }`}
-                          >
-                            <div className="text-[11px]">Admin Dean</div>
-                            <div className="text-[9px] opacity-80 font-normal">Dr. Sarah Hayes</div>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="pt-1">
+                      <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
                         <button
                           onClick={() => {
                             logout();

@@ -8,14 +8,14 @@ import { INITIAL_PROFILES } from '@/lib/mock-data';
 // Permanent Credentials Store
 export const PERMANENT_ACCOUNTS = {
   ADMIN: {
-    email: 'admin@student.edu',
+    email: 'admin@kfueit.edu.pk',
     password: 'AdminPassword123!',
     role: 'admin' as UserRole,
     name: 'Dr. Sarah Hayes',
     title: 'University Dean of Students & Campus Administrator'
   },
   STUDENT: {
-    email: 'alex.rivera@student.edu',
+    email: 'student@kfueit.edu.pk',
     password: 'StudentPassword123!',
     role: 'student' as UserRole,
     name: 'Alex Rivera',
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Default to student demo profile
-    const defaultStudent = profiles.find((p) => p.email === PERMANENT_ACCOUNTS.STUDENT.email) || profiles[1] || INITIAL_PROFILES[1];
+    const defaultStudent = profiles.find((p) => p.email === PERMANENT_ACCOUNTS.STUDENT.email || p.email === 'alex.rivera@kfueit.edu.pk') || profiles[1] || INITIAL_PROFILES[1];
     setUser(defaultStudent);
     if (typeof window !== 'undefined') {
       localStorage.setItem('unimate_active_user_id', defaultStudent.id);
@@ -79,7 +79,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const cleanEmail = email.trim().toLowerCase();
     const profiles = UniMateStore.getProfiles();
-    const found = profiles.find((p) => p.email.toLowerCase() === cleanEmail);
+    let found = profiles.find((p) => p.email.toLowerCase() === cleanEmail);
+
+    // Support alias if user types alex.rivera@kfueit.edu.pk or student@kfueit.edu.pk
+    if (!found && (cleanEmail === 'alex.rivera@kfueit.edu.pk' || cleanEmail === 'student@kfueit.edu.pk')) {
+      found = profiles.find((p) => p.email.toLowerCase() === 'student@kfueit.edu.pk' || p.email.toLowerCase() === 'alex.rivera@kfueit.edu.pk');
+    }
 
     if (!found) {
       setIsLoading(false);
@@ -94,9 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Password Validation
     if (password) {
       let expectedPassword = '';
-      if (cleanEmail === PERMANENT_ACCOUNTS.ADMIN.email) {
+      if (cleanEmail === PERMANENT_ACCOUNTS.ADMIN.email || cleanEmail === 'admin@kfueit.edu.pk') {
         expectedPassword = PERMANENT_ACCOUNTS.ADMIN.password;
-      } else if (cleanEmail === PERMANENT_ACCOUNTS.STUDENT.email) {
+      } else if (cleanEmail === PERMANENT_ACCOUNTS.STUDENT.email || cleanEmail === 'alex.rivera@kfueit.edu.pk' || cleanEmail === 'student@kfueit.edu.pk') {
         expectedPassword = PERMANENT_ACCOUNTS.STUDENT.password;
       } else {
         // Check registered passwords in localStorage
@@ -136,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Validate university domain
     const settings = UniMateStore.getSettings();
-    const allowedDomains = settings.allowed_email_domains || ['student.edu', 'university.edu'];
+    const allowedDomains = settings.allowed_email_domains || ['kfueit.edu.pk'];
     const emailDomain = data.email.split('@')[1]?.toLowerCase();
 
     const isDomainAllowed = allowedDomains.some((d) => emailDomain === d.toLowerCase() || emailDomain?.endsWith('.' + d.toLowerCase()));

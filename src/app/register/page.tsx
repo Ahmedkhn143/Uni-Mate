@@ -22,7 +22,7 @@ export default function RegisterPage() {
   const [studentId, setStudentId] = useState('');
 
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [allowedDomains, setAllowedDomains] = useState<string[]>(['student.edu', 'university.edu']);
+  const [allowedDomains, setAllowedDomains] = useState<string[]>(['kfueit.edu.pk']);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -140,7 +140,7 @@ export default function RegisterPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="k.miller@student.edu"
+                  placeholder="student@kfueit.edu.pk"
                   required
                   className="w-full pl-10 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />

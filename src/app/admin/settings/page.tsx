@@ -44,7 +44,7 @@ export default function AdminSettingsPage() {
 
     const updated = UniMateStore.updateSettings({
       university_name: universityName.trim(),
-      allowed_email_domains: domains.length > 0 ? domains : ['student.edu'],
+      allowed_email_domains: domains.length > 0 ? domains : ['kfueit.edu.pk'],
       max_upload_size_mb: Number(maxUploadMb),
       maintenance_mode: maintenance,
       announcement_banner: banner.trim() || undefined
@@ -104,7 +104,7 @@ export default function AdminSettingsPage() {
             type="text"
             value={domainsInput}
             onChange={(e) => setDomainsInput(e.target.value)}
-            placeholder="student.edu, university.edu, metrostate.edu"
+            placeholder="kfueit.edu.pk"
             required
             className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
           />

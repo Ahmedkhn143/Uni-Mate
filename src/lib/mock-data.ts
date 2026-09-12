@@ -20,8 +20,8 @@ import {
 } from '@/types/database';
 
 export const INITIAL_SETTINGS: SystemSettings = {
-  university_name: 'Metropolitan University',
-  allowed_email_domains: ['student.edu', 'university.edu', 'metrostate.edu'],
+  university_name: 'Khwaja Fareed University of Engineering & Information Technology (KFUEIT)',
+  allowed_email_domains: ['kfueit.edu.pk'],
   allow_public_viewing: true,
   max_upload_size_mb: 25,
   maintenance_mode: false,
@@ -31,7 +31,7 @@ export const INITIAL_SETTINGS: SystemSettings = {
 export const INITIAL_PROFILES: Profile[] = [
   {
     id: 'a0000000-0000-0000-0000-000000000001',
-    email: 'admin@student.edu',
+    email: 'admin@kfueit.edu.pk',
     full_name: 'Dr. Sarah Hayes',
     role: 'admin',
     department_id: 'd1111111-1111-1111-1111-111111111111',
@@ -47,7 +47,7 @@ export const INITIAL_PROFILES: Profile[] = [
   },
   {
     id: 'u0000000-0000-0000-0000-000000000002',
-    email: 'alex.rivera@student.edu',
+    email: 'student@kfueit.edu.pk',
     full_name: 'Alex Rivera',
     role: 'student',
     department_id: 'd1111111-1111-1111-1111-111111111111',
@@ -63,7 +63,7 @@ export const INITIAL_PROFILES: Profile[] = [
   },
   {
     id: 'u0000000-0000-0000-0000-000000000003',
-    email: 'maya.patel@student.edu',
+    email: 'maya.patel@kfueit.edu.pk',
     full_name: 'Maya Patel',
     role: 'student',
     department_id: 'd2222222-2222-2222-2222-222222222222',
@@ -79,7 +79,7 @@ export const INITIAL_PROFILES: Profile[] = [
   },
   {
     id: 'u0000000-0000-0000-0000-000000000004',
-    email: 'jordan.lee@student.edu',
+    email: 'jordan.lee@kfueit.edu.pk',
     full_name: 'Jordan Lee',
     role: 'student',
     department_id: 'd3333333-3333-3333-3333-333333333333',
@@ -390,7 +390,7 @@ export const INITIAL_LOST_FOUND: LostFoundItem[] = [
     author_id: 'u0000000-0000-0000-0000-000000000003',
     author_name: 'Maya Patel',
     author_avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-    author_email: 'maya.patel@student.edu',
+    author_email: 'maya.patel@kfueit.edu.pk',
     type: 'found',
     category: 'ID/Card',
     title: 'Found Student RFID Card (CS Department - Batch 23)',
@@ -408,7 +408,7 @@ export const INITIAL_LOST_FOUND: LostFoundItem[] = [
     author_id: 'u0000000-0000-0000-0000-000000000002',
     author_name: 'Alex Rivera',
     author_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    author_email: 'alex.rivera@student.edu',
+    author_email: 'student@kfueit.edu.pk',
     type: 'lost',
     category: 'Electronics',
     title: 'Lost Casio Scientific Calculator (Black fx-991EX)',
@@ -416,7 +416,7 @@ export const INITIAL_LOST_FOUND: LostFoundItem[] = [
     location: 'Auditorium B, Row 3',
     event_date: '2026-03-09',
     image_url: 'https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?w=600&auto=format&fit=crop&q=80',
-    contact_info: 'alex.rivera@student.edu or message me on UniMate',
+    contact_info: 'student@kfueit.edu.pk or message me on UniMate',
     contact_preference: 'in_app',
     status: 'open',
     created_at: '2026-03-09T18:10:00Z'
@@ -426,7 +426,7 @@ export const INITIAL_LOST_FOUND: LostFoundItem[] = [
     author_id: 'u0000000-0000-0000-0000-000000000004',
     author_name: 'Jordan Lee',
     author_avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    author_email: 'jordan.lee@student.edu',
+    author_email: 'jordan.lee@kfueit.edu.pk',
     type: 'found',
     category: 'Keys',
     title: 'Found Toyota Car Key with Blue University Carabiner',

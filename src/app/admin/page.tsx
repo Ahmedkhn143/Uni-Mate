@@ -147,10 +147,10 @@ export default function AdminDashboardPage() {
           <div className="flex flex-col sm:items-end gap-2 shrink-0">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>CAMPUS CLOUD ONLINE</span>
+              <span>KFUEIT CAMPUS ONLINE</span>
             </div>
             <span className="text-[11px] text-slate-400 font-mono">
-              Permanent Admin: {PERMANENT_ACCOUNTS.ADMIN.email}
+              Domain: @kfueit.edu.pk
             </span>
           </div>
         </div>
@@ -558,16 +558,15 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* 4. PERMANENT CREDENTIALS REFERENCE CARD (FOR CONVENIENCE) */}
+      {/* 4. QUICK ADMINISTRATION LINKS */}
       <div className="p-5 rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-amber-600" />
-            <span>Permanent System Role Records</span>
+            <span>KFUEIT Administration Controls</span>
           </div>
           <p className="text-[11px] text-slate-500">
-            Admin: <span className="font-mono font-bold text-amber-600">{PERMANENT_ACCOUNTS.ADMIN.email}</span> ({PERMANENT_ACCOUNTS.ADMIN.password}) &nbsp;|&nbsp; 
-            Student: <span className="font-mono font-bold text-indigo-600">{PERMANENT_ACCOUNTS.STUDENT.email}</span> ({PERMANENT_ACCOUNTS.STUDENT.password})
+            Configure platform policies, email domain restrictions, and academic department registries.
           </p>
         </div>
 
