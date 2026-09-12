@@ -15,9 +15,10 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
 import { Profile } from '@/types/database';
+import { AdminAccessDenied } from '@/components/ui/AdminAccessDenied';
 
 export default function AdminUsersPage() {
-  const { isAdmin, switchUser } = useAuth();
+  const { isAdmin } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [search, setSearch] = useState('');
 
@@ -30,11 +31,7 @@ export default function AdminUsersPage() {
   }, []);
 
   if (!isAdmin) {
-    return (
-      <div className="py-20 text-center">
-        <h2 className="text-xl font-bold">Admin Privileges Required</h2>
-      </div>
-    );
+    return <AdminAccessDenied />;
   }
 
   const handleToggleSuspend = (userId: string) => {

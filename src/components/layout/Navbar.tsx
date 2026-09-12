@@ -17,7 +17,8 @@ import {
   X,
   PlusCircle,
   HelpCircle,
-  PackageSearch
+  PackageSearch,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -63,7 +64,7 @@ export function Navbar() {
           
           {/* Brand Logo */}
           <div className="flex items-center gap-3">
-            <Link href={user ? '/dashboard' : '/'} className="flex items-center gap-2.5 group">
+            <Link href={user ? (isAdmin ? '/admin' : '/dashboard') : '/'} className="flex items-center gap-2.5 group">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
                 <GraduationCap className="w-5 h-5" />
               </div>
@@ -71,14 +72,20 @@ export function Navbar() {
                 <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 to-indigo-900 dark:from-indigo-400 dark:to-indigo-200 bg-clip-text text-transparent">
                   UniMate
                 </span>
-                <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded border border-indigo-200 dark:border-indigo-800">
-                  Campus
-                </span>
+                {isAdmin ? (
+                  <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-black tracking-wider px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded border border-amber-300 dark:border-amber-800">
+                    ADMIN CONSOLE
+                  </span>
+                ) : (
+                  <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded border border-indigo-200 dark:border-indigo-800">
+                    STUDENT
+                  </span>
+                )}
               </div>
             </Link>
           </div>
 
-          {/* Global Search Bar (Shown when logged in or on search) */}
+          {/* Global Search Bar */}
           {user && (
             <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-md mx-4">
               <div className="relative w-full">
@@ -87,7 +94,7 @@ export function Navbar() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search questions, past papers, lost items..."
+                  placeholder={isAdmin ? "Search students, flags, exam papers..." : "Search questions, past papers, lost items..."}
                   className="w-full pl-10 pr-4 py-2 text-sm bg-slate-100/90 dark:bg-slate-800/90 border border-transparent focus:border-indigo-500 dark:focus:border-indigo-400 rounded-xl focus:bg-white dark:focus:bg-slate-900 transition-all text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                 />
               </div>
@@ -98,23 +105,42 @@ export function Navbar() {
           <div className="flex items-center gap-2 sm:gap-3">
             {user ? (
               <>
-                {/* Ask / Report Quick Trigger */}
-                <div className="hidden lg:flex items-center gap-1.5">
-                  <Link
-                    href="/questions/ask"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-lg border border-indigo-200/60 dark:border-indigo-800 transition"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    Ask Question
-                  </Link>
-                  <Link
-                    href="/lost-and-found/create"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 rounded-lg border border-emerald-200/60 dark:border-emerald-800 transition"
-                  >
-                    <PackageSearch className="w-3.5 h-3.5" />
-                    Lost & Found
-                  </Link>
-                </div>
+                {/* Role-Specific Quick Triggers */}
+                {isAdmin ? (
+                  <div className="hidden lg:flex items-center gap-1.5">
+                    <Link
+                      href="/admin/reports"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 hover:bg-red-100 rounded-lg border border-red-200 dark:border-red-900 transition"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Moderation
+                    </Link>
+                    <Link
+                      href="/admin/past-papers"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 rounded-lg border border-purple-200 dark:border-purple-900 transition"
+                    >
+                      <PackageSearch className="w-3.5 h-3.5" />
+                      Approvals
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="hidden lg:flex items-center gap-1.5">
+                    <Link
+                      href="/questions/ask"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-lg border border-indigo-200/60 dark:border-indigo-800 transition"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      Ask Question
+                    </Link>
+                    <Link
+                      href="/lost-and-found/create"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 rounded-lg border border-emerald-200/60 dark:border-emerald-800 transition"
+                    >
+                      <PackageSearch className="w-3.5 h-3.5" />
+                      Lost & Found
+                    </Link>
+                  </div>
+                )}
 
                 {/* Messages Icon */}
                 <Link
@@ -157,19 +183,23 @@ export function Navbar() {
                 <div className="relative">
                   <button
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="flex items-center gap-2 p-1 pl-2 text-left rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition"
+                    className={`flex items-center gap-2 p-1 pl-2 text-left rounded-xl transition border ${
+                      isAdmin
+                        ? 'border-amber-400/50 dark:border-amber-600/50 bg-amber-500/10'
+                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
                   >
                     <div className="hidden sm:block text-right">
                       <div className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate max-w-[120px]">
                         {user.full_name}
                       </div>
-                      <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400 flex items-center justify-end gap-1">
+                      <div className="text-[10px] font-medium flex items-center justify-end gap-1">
                         {user.role === 'admin' ? (
-                          <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
-                            <ShieldCheck className="w-2.5 h-2.5" /> Admin
+                          <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-0.5">
+                            <ShieldCheck className="w-2.5 h-2.5" /> Dean / Admin
                           </span>
                         ) : (
-                          <span>Semester {user.semester || 4}</span>
+                          <span className="text-slate-500">Semester {user.semester || 4}</span>
                         )}
                       </div>
                     </div>
@@ -178,10 +208,10 @@ export function Navbar() {
                       <img
                         src={user.avatar_url}
                         alt={user.full_name}
-                        className="w-8 h-8 rounded-lg object-cover ring-2 ring-indigo-500/20"
+                        className={`w-8 h-8 rounded-lg object-cover ring-2 ${isAdmin ? 'ring-amber-500' : 'ring-indigo-500/20'}`}
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-xs">
+                      <div className={`w-8 h-8 rounded-lg text-white font-bold flex items-center justify-center text-xs ${isAdmin ? 'bg-amber-600' : 'bg-indigo-600'}`}>
                         {user.full_name.charAt(0)}
                       </div>
                     )}
@@ -190,67 +220,105 @@ export function Navbar() {
                   {/* Dropdown Card */}
                   {userDropdownOpen && (
                     <div 
-                      className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                      className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
                       onMouseLeave={() => setUserDropdownOpen(false)}
                     >
                       <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{user.full_name}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
-                        <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium mt-1">
-                          {user.program || user.department_name}
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{user.full_name}</p>
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                            isAdmin ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300'
+                          }`}>
+                            {user.role}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-mono truncate">{user.email}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1">
+                          {isAdmin ? 'University Faculty Operations' : `${user.program || 'Student'} • Sem ${user.semester || 4}`}
                         </p>
                       </div>
 
                       <div className="py-1">
-                        <Link
-                          href="/profile"
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
-                        >
-                          <User className="w-4 h-4 text-slate-400" />
-                          View Student Profile
-                        </Link>
-                        <Link
-                          href="/bookmarks"
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
-                        >
-                          <Bookmark className="w-4 h-4 text-slate-400" />
-                          Saved Items
-                        </Link>
-
-                        {/* Admin Link */}
-                        {isAdmin && (
-                          <Link
-                            href="/admin"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-100/50 transition"
-                          >
-                            <ShieldCheck className="w-4 h-4 text-amber-600" />
-                            Admin Moderation Dashboard
-                          </Link>
+                        {isAdmin ? (
+                          <>
+                            <Link
+                              href="/admin"
+                              onClick={() => setUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 transition"
+                            >
+                              <ShieldCheck className="w-4 h-4 text-amber-600" />
+                              Admin Command Center
+                            </Link>
+                            <Link
+                              href="/admin/reports"
+                              onClick={() => setUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
+                            >
+                              <AlertCircle className="w-4 h-4 text-red-500" />
+                              Moderation Queue
+                            </Link>
+                            <Link
+                              href="/admin/users"
+                              onClick={() => setUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
+                            >
+                              <User className="w-4 h-4 text-indigo-500" />
+                              Student Directory
+                            </Link>
+                          </>
+                        ) : (
+                          <>
+                            <Link
+                              href="/dashboard"
+                              onClick={() => setUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
+                            >
+                              <GraduationCap className="w-4 h-4 text-indigo-600" />
+                              Student Dashboard
+                            </Link>
+                            <Link
+                              href="/profile"
+                              onClick={() => setUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
+                            >
+                              <User className="w-4 h-4 text-slate-400" />
+                              View Student Profile
+                            </Link>
+                            <Link
+                              href="/bookmarks"
+                              onClick={() => setUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
+                            >
+                              <Bookmark className="w-4 h-4 text-slate-400" />
+                              Saved Bookmarks
+                            </Link>
+                          </>
                         )}
                       </div>
 
                       {/* Demo Quick Switcher */}
-                      <div className="p-2 border-t border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50">
-                        <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-1 flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-indigo-500" />
-                          Quick Switch Role
+                      <div className="p-3 border-t border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 space-y-1.5">
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                          <span className="flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-indigo-500" />
+                            Switch Demo Account
+                          </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-1 text-xs">
+                        <div className="grid grid-cols-2 gap-1.5 text-xs">
                           <button
                             onClick={() => {
                               switchUser('student');
                               setUserDropdownOpen(false);
+                              router.push('/dashboard');
                             }}
-                            className={`px-2 py-1.5 rounded-lg text-left font-medium transition ${
+                            className={`px-2.5 py-2 rounded-xl text-left font-bold transition ${
                               user.role === 'student'
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200/60'
+                                ? 'bg-indigo-600 text-white shadow-xs'
+                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200/60 border border-slate-200 dark:border-slate-700'
                             }`}
                           >
-                            Student
+                            <div className="text-[11px]">Student</div>
+                            <div className="text-[9px] opacity-80 font-normal">Alex Rivera</div>
                           </button>
                           <button
                             onClick={() => {
@@ -258,13 +326,14 @@ export function Navbar() {
                               setUserDropdownOpen(false);
                               router.push('/admin');
                             }}
-                            className={`px-2 py-1.5 rounded-lg text-left font-medium transition ${
+                            className={`px-2.5 py-2 rounded-xl text-left font-bold transition ${
                               user.role === 'admin'
-                                ? 'bg-amber-600 text-white'
-                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200/60'
+                                ? 'bg-amber-600 text-white shadow-xs'
+                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200/60 border border-slate-200 dark:border-slate-700'
                             }`}
                           >
-                            Admin
+                            <div className="text-[11px]">Admin Dean</div>
+                            <div className="text-[9px] opacity-80 font-normal">Dr. Sarah Hayes</div>
                           </button>
                         </div>
                       </div>

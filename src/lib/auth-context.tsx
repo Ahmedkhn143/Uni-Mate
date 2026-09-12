@@ -5,13 +5,31 @@ import { Profile, UserRole } from '@/types/database';
 import { UniMateStore } from '@/lib/store';
 import { INITIAL_PROFILES } from '@/lib/mock-data';
 
+// Permanent Credentials Store
+export const PERMANENT_ACCOUNTS = {
+  ADMIN: {
+    email: 'admin@student.edu',
+    password: 'AdminPassword123!',
+    role: 'admin' as UserRole,
+    name: 'Dr. Sarah Hayes',
+    title: 'University Dean of Students & Campus Administrator'
+  },
+  STUDENT: {
+    email: 'alex.rivera@student.edu',
+    password: 'StudentPassword123!',
+    role: 'student' as UserRole,
+    name: 'Alex Rivera',
+    title: 'BS Computer Science • Semester 4'
+  }
+};
+
 interface AuthContextType {
   user: Profile | null;
   role: UserRole | null;
   isAdmin: boolean;
   isStudent: boolean;
   isLoading: boolean;
-  login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password?: string) => Promise<{ success: boolean; error?: string; role?: UserRole }>;
   signup: (data: {
     email: string;
     password?: string;
@@ -33,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Load persisted user or default to Alex Rivera (CS Student)
+    // Load persisted user or default to Alex Rivera (Student)
     const storedUserId = typeof window !== 'undefined' ? localStorage.getItem('unimate_active_user_id') : null;
     const profiles = UniMateStore.getProfiles();
     
@@ -46,8 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Default to the active student demo profile
-    const defaultStudent = profiles.find((p) => p.email === 'alex.rivera@student.edu') || profiles[1] || INITIAL_PROFILES[1];
+    // Default to student demo profile
+    const defaultStudent = profiles.find((p) => p.email === PERMANENT_ACCOUNTS.STUDENT.email) || profiles[1] || INITIAL_PROFILES[1];
     setUser(defaultStudent);
     if (typeof window !== 'undefined') {
       localStorage.setItem('unimate_active_user_id', defaultStudent.id);
@@ -55,22 +73,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password?: string): Promise<{ success: boolean; error?: string; role?: UserRole }> => {
     setIsLoading(true);
-    // Simulate brief network latency
-    await new Promise((res) => setTimeout(res, 400));
+    await new Promise((res) => setTimeout(res, 350));
 
+    const cleanEmail = email.trim().toLowerCase();
     const profiles = UniMateStore.getProfiles();
-    const found = profiles.find((p) => p.email.toLowerCase() === email.toLowerCase());
+    const found = profiles.find((p) => p.email.toLowerCase() === cleanEmail);
 
     if (!found) {
       setIsLoading(false);
-      return { success: false, error: 'No account found with this university email address.' };
+      return { success: false, error: 'No university account found with this email address.' };
     }
 
     if (found.is_suspended) {
       setIsLoading(false);
-      return { success: false, error: 'This account has been suspended by campus moderators. Contact student affairs.' };
+      return { success: false, error: 'This account has been suspended by campus moderators.' };
+    }
+
+    // Password Validation
+    if (password) {
+      let expectedPassword = '';
+      if (cleanEmail === PERMANENT_ACCOUNTS.ADMIN.email) {
+        expectedPassword = PERMANENT_ACCOUNTS.ADMIN.password;
+      } else if (cleanEmail === PERMANENT_ACCOUNTS.STUDENT.email) {
+        expectedPassword = PERMANENT_ACCOUNTS.STUDENT.password;
+      } else {
+        // Check registered passwords in localStorage
+        try {
+          const registeredPasswords = JSON.parse(localStorage.getItem('unimate_passwords') || '{}');
+          expectedPassword = registeredPasswords[cleanEmail] || 'StudentPassword123!';
+        } catch {
+          expectedPassword = 'StudentPassword123!';
+        }
+      }
+
+      if (password !== expectedPassword) {
+        setIsLoading(false);
+        return { success: false, error: 'Incorrect password. Please verify your credentials.' };
+      }
     }
 
     setUser(found);
@@ -78,11 +119,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('unimate_active_user_id', found.id);
     }
     setIsLoading(false);
-    return { success: true };
+    return { success: true, role: found.role };
   };
 
   const signup = async (data: {
     email: string;
+    password?: string;
     fullName: string;
     departmentId: string;
     program: string;
@@ -90,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     studentId?: string;
   }): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
-    await new Promise((res) => setTimeout(res, 500));
+    await new Promise((res) => setTimeout(res, 400));
 
     // Validate university domain
     const settings = UniMateStore.getSettings();
@@ -102,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       return {
         success: false,
-        error: `Email must belong to an approved university domain (${allowedDomains.join(', ')}).`
+        error: `Email domain must be an approved university domain (${allowedDomains.join(', ')}).`
       };
     }
 
@@ -132,6 +174,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+
+    // Save registered password
+    if (data.password && typeof window !== 'undefined') {
+      try {
+        const passwords = JSON.parse(localStorage.getItem('unimate_passwords') || '{}');
+        passwords[newProfile.email] = data.password;
+        localStorage.setItem('unimate_passwords', JSON.stringify(passwords));
+      } catch (err) {
+        console.error('Failed saving password:', err);
+      }
+    }
 
     UniMateStore.saveProfile(newProfile);
     setUser(newProfile);

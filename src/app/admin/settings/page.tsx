@@ -7,6 +7,8 @@ import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
 import { SystemSettings } from '@/types/database';
 
+import { AdminAccessDenied } from '@/components/ui/AdminAccessDenied';
+
 export default function AdminSettingsPage() {
   const { isAdmin } = useAuth();
   
@@ -30,7 +32,7 @@ export default function AdminSettingsPage() {
   }, []);
 
   if (!isAdmin) {
-    return <div className="py-20 text-center">Admin Privileges Required</div>;
+    return <AdminAccessDenied />;
   }
 
   const handleSave = (e: React.FormEvent) => {

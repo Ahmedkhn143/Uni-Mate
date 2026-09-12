@@ -8,6 +8,8 @@ import { UniMateStore } from '@/lib/store';
 import { PastPaper } from '@/types/database';
 import { EmptyState } from '@/components/ui/EmptyState';
 
+import { AdminAccessDenied } from '@/components/ui/AdminAccessDenied';
+
 export default function AdminPastPapersPage() {
   const { isAdmin } = useAuth();
   const [papers, setPapers] = useState<PastPaper[]>([]);
@@ -21,11 +23,7 @@ export default function AdminPastPapersPage() {
   }, []);
 
   if (!isAdmin) {
-    return (
-      <div className="py-20 text-center">
-        <h2 className="text-xl font-bold">Admin Privileges Required</h2>
-      </div>
-    );
+    return <AdminAccessDenied />;
   }
 
   const handleSetStatus = (paperId: string, status: 'approved' | 'rejected') => {

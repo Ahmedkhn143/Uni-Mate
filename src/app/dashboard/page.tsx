@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   HelpCircle, 
   PackageSearch, 
@@ -19,14 +20,22 @@ import {
   TrendingUp,
   MapPin,
   ExternalLink,
-  ShieldAlert
+  ShieldAlert,
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
 import { Question, LostFoundItem, PastPaper, Scholarship, Post, Notification } from '@/types/database';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user, isStudent, isAdmin } = useAuth();
+
+  useEffect(() => {
+    if (user && user.role === 'admin') {
+      router.push('/admin');
+    }
+  }, [user, router]);
   
   const [questions, setQuestions] = useState<Question[]>([]);
   const [lostFound, setLostFound] = useState<LostFoundItem[]>([]);
@@ -61,6 +70,21 @@ export default function DashboardPage() {
         <p className="text-xs text-slate-500">Please sign in to access your student dashboard.</p>
         <Link href="/login" className="inline-block px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold">
           Sign In Now
+        </Link>
+      </div>
+    );
+  }
+
+  if (user.role === 'admin') {
+    return (
+      <div className="py-20 text-center space-y-4 max-w-md mx-auto">
+        <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-600 flex items-center justify-center mx-auto">
+          <ShieldCheck className="w-7 h-7" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Administrator Session Active</h2>
+        <p className="text-xs text-slate-500">You are logged in as a Campus Administrator. Please proceed to the Administration Console.</p>
+        <Link href="/admin" className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-md transition">
+          Open Admin Command Center →
         </Link>
       </div>
     );

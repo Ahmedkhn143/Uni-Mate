@@ -6,6 +6,7 @@ import { BookOpen, Building, PlusCircle, ArrowLeft, CheckCircle2 } from 'lucide-
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
 import { Department, Subject } from '@/types/database';
+import { AdminAccessDenied } from '@/components/ui/AdminAccessDenied';
 
 export default function AdminAcademicPage() {
   const { isAdmin } = useAuth();
@@ -43,7 +44,7 @@ export default function AdminAcademicPage() {
   }, [subjDeptId]);
 
   if (!isAdmin) {
-    return <div className="py-20 text-center">Admin Privileges Required</div>;
+    return <AdminAccessDenied />;
   }
 
   const handleAddDept = (e: React.FormEvent) => {

@@ -3,16 +3,29 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, ArrowRight, AlertCircle, ShieldCheck, Sparkles, Lock, Mail } from 'lucide-react';
-import { useAuth } from '@/lib/auth-context';
+import { 
+  GraduationCap, 
+  ArrowRight, 
+  AlertCircle, 
+  ShieldCheck, 
+  Sparkles, 
+  Lock, 
+  Mail, 
+  Key,
+  Copy,
+  Check
+} from 'lucide-react';
+import { useAuth, PERMANENT_ACCOUNTS } from '@/lib/auth-context';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, switchUser } = useAuth();
+  const { login } = useAuth();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +33,11 @@ export default function LoginPage() {
       setError('Please enter your university email address.');
       return;
     }
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
+
     setError('');
     setLoading(true);
 
@@ -27,7 +45,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (res.success) {
-      if (email.includes('admin')) {
+      if (res.role === 'admin') {
         router.push('/admin');
       } else {
         router.push('/dashboard');
@@ -37,30 +55,115 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickDemo = (role: 'student' | 'admin') => {
-    switchUser(role);
-    if (role === 'admin') {
-      router.push('/admin');
-    } else {
-      router.push('/dashboard');
+  const handleFillCredentials = async (accountType: 'ADMIN' | 'STUDENT') => {
+    const acc = PERMANENT_ACCOUNTS[accountType];
+    setEmail(acc.email);
+    setPassword(acc.password);
+    setError('');
+    setLoading(true);
+
+    const res = await login(acc.email, acc.password);
+    setLoading(false);
+
+    if (res.success) {
+      if (acc.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     }
+  };
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 1500);
   };
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl">
+      <div className="max-w-md w-full space-y-6 bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl">
         
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-md shadow-indigo-500/20">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-emerald-400 text-white flex items-center justify-center mx-auto shadow-md shadow-indigo-500/20">
             <GraduationCap className="w-7 h-7" />
           </div>
           <h2 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">
             Sign In to UniMate
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Access your university student community, Q&A, and past papers.
+            Select an official portal credential or enter your registered university email.
           </p>
+        </div>
+
+        {/* Permanent Accounts Selection Cards */}
+        <div className="space-y-2.5">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+            <Key className="w-3.5 h-3.5 text-indigo-500" />
+            <span>Official Portal Accounts</span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2.5">
+            {/* Admin Account Card */}
+            <div className="p-3 rounded-2xl border-2 border-amber-300 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/30 flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-amber-600" />
+                  <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                    Administrator Account
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600 dark:text-slate-300 font-mono">
+                  {PERMANENT_ACCOUNTS.ADMIN.email}
+                </div>
+                <div className="text-[10px] text-slate-500">
+                  Password: <span className="font-mono font-semibold">{PERMANENT_ACCOUNTS.ADMIN.password}</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleFillCredentials('ADMIN')}
+                className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition shrink-0"
+              >
+                Log In Admin
+              </button>
+            </div>
+
+            {/* Student Account Card */}
+            <div className="p-3 rounded-2xl border-2 border-indigo-300 dark:border-indigo-900 bg-indigo-50/50 dark:bg-indigo-950/30 flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5">
+                  <GraduationCap className="w-4 h-4 text-indigo-600" />
+                  <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200">
+                    Student Account
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600 dark:text-slate-300 font-mono">
+                  {PERMANENT_ACCOUNTS.STUDENT.email}
+                </div>
+                <div className="text-[10px] text-slate-500">
+                  Password: <span className="font-mono font-semibold">{PERMANENT_ACCOUNTS.STUDENT.password}</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleFillCredentials('STUDENT')}
+                className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition shrink-0"
+              >
+                Log In Student
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="relative flex py-1 items-center">
+          <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+          <span className="flex-shrink mx-3 text-[11px] text-slate-400 uppercase font-semibold">Or enter manually</span>
+          <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
         </div>
 
         {/* Error Alert */}
@@ -125,40 +228,9 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Demo Fast Logins */}
-        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
-          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-            <span className="flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-indigo-500" /> Demo Quick Switch
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => handleQuickDemo('student')}
-              type="button"
-              className="p-2.5 rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50/50 dark:bg-indigo-950/30 text-left hover:bg-indigo-100/50 transition"
-            >
-              <p className="text-xs font-bold text-indigo-900 dark:text-indigo-200">Student Account</p>
-              <p className="text-[10px] text-indigo-700 dark:text-indigo-300">Alex Rivera (CS Dept)</p>
-            </button>
-
-            <button
-              onClick={() => handleQuickDemo('admin')}
-              type="button"
-              className="p-2.5 rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/30 text-left hover:bg-amber-100/50 transition"
-            >
-              <div className="flex items-center gap-1 text-xs font-bold text-amber-900 dark:text-amber-200">
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-600" /> Admin Account
-              </div>
-              <p className="text-[10px] text-amber-700 dark:text-amber-300">Dr. Sarah Hayes</p>
-            </button>
-          </div>
-        </div>
-
         {/* Footer link to signup */}
-        <div className="text-center text-xs text-slate-500 dark:text-slate-400">
-          New to UniMate?{' '}
+        <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
+          New student?{' '}
           <Link href="/register" className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
             Register with university email
           </Link>

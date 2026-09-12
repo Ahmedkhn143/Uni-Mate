@@ -16,10 +16,11 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
 import { Report } from '@/types/database';
+import { AdminAccessDenied } from '@/components/ui/AdminAccessDenied';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function AdminReportsPage() {
-  const { isAdmin, switchUser } = useAuth();
+  const { isAdmin } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
   const [filterStatus, setFilterStatus] = useState<'pending' | 'resolved' | 'dismissed' | 'all'>('pending');
 
@@ -32,17 +33,7 @@ export default function AdminReportsPage() {
   }, []);
 
   if (!isAdmin) {
-    return (
-      <div className="py-20 max-w-md mx-auto text-center space-y-4">
-        <h2 className="text-xl font-bold">Admin Privileges Required</h2>
-        <button
-          onClick={() => switchUser('admin')}
-          className="px-5 py-2.5 bg-amber-600 text-white font-bold text-xs rounded-xl"
-        >
-          Switch to Admin Role
-        </button>
-      </div>
-    );
+    return <AdminAccessDenied />;
   }
 
   const handleAction = (reportId: string, action: 'resolved' | 'dismissed', notes?: string) => {
