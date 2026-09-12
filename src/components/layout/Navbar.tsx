@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export function Navbar() {
   const { user, isAdmin, logout } = useAuth();
@@ -116,6 +117,7 @@ export function Navbar() {
 
             {/* Right Controls */}
             <div className="flex items-center gap-2 sm:gap-3">
+              <ThemeToggle />
               {user ? (
                 <div className="flex items-center gap-2.5">
                   <Link
@@ -374,6 +376,9 @@ export function Navbar() {
                 >
                   <Bookmark className="w-5 h-5" />
                 </Link>
+
+                {/* Theme Mode Switcher */}
+                <ThemeToggle />
 
                 {/* User Menu Dropdown */}
                 <div className="relative">
