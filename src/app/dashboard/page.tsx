@@ -32,7 +32,11 @@ export default function DashboardPage() {
   const { user, isStudent, isAdmin } = useAuth();
 
   useEffect(() => {
-    if (user && user.role === 'admin') {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (user.role === 'admin') {
       router.push('/admin');
     }
   }, [user, router]);

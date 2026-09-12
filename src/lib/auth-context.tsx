@@ -38,6 +38,7 @@ interface AuthContextType {
     program: string;
     semester: number;
     studentId?: string;
+    avatarUrl?: string;
   }) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   switchUser: (role: UserRole) => void;
@@ -131,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     program: string;
     semester: number;
     studentId?: string;
+    avatarUrl?: string;
   }): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     await new Promise((res) => setTimeout(res, 400));
@@ -169,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       program: data.program,
       semester: data.semester,
       student_id: data.studentId || 'S-' + Math.floor(1000 + Math.random() * 9000),
-      avatar_url: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80`,
+      avatar_url: data.avatarUrl || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80`,
       bio: `Enrolled student in ${data.program} (${dept?.name || 'University'}).`,
       is_suspended: false,
       created_at: new Date().toISOString(),

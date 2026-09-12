@@ -59,15 +59,15 @@ export default function LandingPage() {
           {/* Call to Actions */}
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <Link
-              href={user ? "/dashboard" : "/register"}
+              href={user ? (user.role === 'admin' ? "/admin" : "/dashboard") : "/login"}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/35 transition-all hover:scale-[1.02]"
             >
-              <span>{user ? "Go to Student Dashboard" : "Join UniMate"}</span>
+              <span>{user ? (user.role === 'admin' ? "Go to Admin Console" : "Go to Student Dashboard") : "Join UniMate"}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 
             <Link
-              href="/questions"
+              href={user ? "/questions" : "/login"}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold text-sm border border-slate-200 dark:border-slate-700 transition"
             >
               <Users className="w-4 h-4 text-indigo-500" />
@@ -107,29 +107,38 @@ export default function LandingPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+                <Link 
+                  href={user ? "/questions" : "/login"}
+                  className="block p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-indigo-500/50 hover:shadow-md transition group"
+                >
                   <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 mb-1">
                     <HelpCircle className="w-4 h-4" /> Academic Q&A
                   </div>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">Dijkstra Indexed Min-Heap</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">Dijkstra Indexed Min-Heap</p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Accepted answer by Maya Patel (EE TA) with step-by-step proofs.</p>
-                </div>
+                </Link>
 
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+                <Link 
+                  href={user ? "/lost-and-found" : "/login"}
+                  className="block p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-emerald-500/50 hover:shadow-md transition group"
+                >
                   <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 mb-1">
                     <PackageSearch className="w-4 h-4" /> Lost & Found
                   </div>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">Student ID Card (Library 2F)</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">Student ID Card (Library 2F)</p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Found blue lanyard ID card. Handed over to library front desk.</p>
-                </div>
+                </Link>
 
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+                <Link 
+                  href={user ? "/past-papers" : "/login"}
+                  className="block p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-purple-500/50 hover:shadow-md transition group"
+                >
                   <div className="flex items-center gap-2 text-xs font-bold text-purple-600 mb-1">
                     <FileText className="w-4 h-4" /> Verified Past Papers
                   </div>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">CS-201 Midterm 2025</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition">CS-201 Midterm 2025</p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">418 downloads • Solved & verified by department faculty.</p>
-                </div>
+                </Link>
               </div>
             </div>
           </div>
@@ -278,7 +287,7 @@ export default function LandingPage() {
 
               <div className="pt-2">
                 <Link
-                  href="/past-papers"
+                  href={user ? "/past-papers" : "/login"}
                   className="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 group"
                 >
                   <span>Browse Exam Papers Directory</span>
@@ -307,7 +316,7 @@ export default function LandingPage() {
                     <Download className="w-4 h-4 text-slate-400" /> 418 downloads
                   </span>
                   <Link
-                    href="/past-papers"
+                    href={user ? "/past-papers" : "/login"}
                     className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
                   >
                     View Paper
@@ -356,7 +365,10 @@ export default function LandingPage() {
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-amber-500" /> Deadline: Oct 31, 2026
                 </span>
-                <Link href="/scholarships" className="font-bold text-indigo-600 hover:underline">
+                <Link 
+                  href={user ? "/scholarships" : "/login"} 
+                  className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
                   Details & Apply →
                 </Link>
               </div>
@@ -381,7 +393,10 @@ export default function LandingPage() {
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-red-500" /> Closing Soon: Sep 30, 2026
                 </span>
-                <Link href="/scholarships" className="font-bold text-indigo-600 hover:underline">
+                <Link 
+                  href={user ? "/scholarships" : "/login"} 
+                  className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
                   Details & Apply →
                 </Link>
               </div>
@@ -401,10 +416,10 @@ export default function LandingPage() {
           </p>
           <div className="pt-2">
             <Link
-              href={user ? "/dashboard" : "/register"}
+              href={user ? (user.role === 'admin' ? "/admin" : "/dashboard") : "/login"}
               className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white text-indigo-700 hover:bg-indigo-50 font-bold text-sm shadow-xl hover:scale-105 transition-all"
             >
-              <span>{user ? "Open Student Dashboard" : "Get Started — It's Free"}</span>
+              <span>{user ? (user.role === 'admin' ? "Open Admin Console" : "Open Student Dashboard") : "Get Started — Sign In"}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

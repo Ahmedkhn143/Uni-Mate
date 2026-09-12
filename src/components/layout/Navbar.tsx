@@ -89,25 +89,25 @@ export function Navbar() {
                 Features
               </Link>
               <Link
-                href="/questions"
+                href={user ? "/questions" : "/login"}
                 className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
               >
                 Q&A Forum
               </Link>
               <Link
-                href="/past-papers"
+                href={user ? "/past-papers" : "/login"}
                 className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
               >
                 Past Papers
               </Link>
               <Link
-                href="/lost-and-found"
+                href={user ? "/lost-and-found" : "/login"}
                 className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
               >
                 Lost & Found
               </Link>
               <Link
-                href="/scholarships"
+                href={user ? "/scholarships" : "/login"}
                 className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
               >
                 Scholarships
@@ -178,28 +178,28 @@ export function Navbar() {
                 Features
               </Link>
               <Link
-                href="/questions"
+                href={user ? "/questions" : "/login"}
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 Q&A Forum
               </Link>
               <Link
-                href="/past-papers"
+                href={user ? "/past-papers" : "/login"}
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 Past Papers
               </Link>
               <Link
-                href="/lost-and-found"
+                href={user ? "/lost-and-found" : "/login"}
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 Lost & Found
               </Link>
               <Link
-                href="/scholarships"
+                href={user ? "/scholarships" : "/login"}
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
