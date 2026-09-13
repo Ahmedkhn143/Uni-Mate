@@ -12,11 +12,9 @@ import {
   Eye, 
   EyeOff, 
   CheckCircle2,
-  ArrowLeft,
-  ShieldCheck,
-  Sparkles
+  ArrowLeft
 } from 'lucide-react';
-import { useAuth, PERMANENT_ACCOUNTS } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth-context';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 function LoginForm() {
@@ -32,18 +30,6 @@ function LoginForm() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const fillAdminCredentials = () => {
-    setEmail(PERMANENT_ACCOUNTS.ADMIN.email);
-    setPassword(PERMANENT_ACCOUNTS.ADMIN.password);
-    setError('');
-  };
-
-  const fillStudentCredentials = () => {
-    setEmail(PERMANENT_ACCOUNTS.STUDENT.email);
-    setPassword(PERMANENT_ACCOUNTS.STUDENT.password);
-    setError('');
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,42 +108,7 @@ function LoginForm() {
           </p>
         </div>
 
-        {/* 1-Click Demo Accounts Quick-Fill Card */}
-        <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              Demo Accounts Quick-Fill
-            </span>
-            <span className="text-[9px] text-slate-400 font-medium">Click to populate</span>
-          </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={fillAdminCredentials}
-              className="p-2 rounded-xl text-left bg-white dark:bg-slate-900 border border-amber-300/80 dark:border-amber-700/60 hover:border-amber-500 hover:shadow-xs transition group cursor-pointer"
-            >
-              <div className="flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-300">
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span className="truncate">Admin Demo</span>
-              </div>
-              <p className="text-[9px] text-slate-400 font-mono truncate mt-0.5">admin@kfueit.edu.pk</p>
-            </button>
-
-            <button
-              type="button"
-              onClick={fillStudentCredentials}
-              className="p-2 rounded-xl text-left bg-white dark:bg-slate-900 border border-indigo-300/80 dark:border-indigo-700/60 hover:border-indigo-500 hover:shadow-xs transition group cursor-pointer"
-            >
-              <div className="flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-300">
-                <GraduationCap className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                <span className="truncate">Student Demo</span>
-              </div>
-              <p className="text-[9px] text-slate-400 font-mono truncate mt-0.5">student@kfueit.edu.pk</p>
-            </button>
-          </div>
-        </div>
 
         {/* Domain Notice */}
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/70 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[11px] font-medium">

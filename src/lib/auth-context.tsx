@@ -2,26 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Profile, UserRole } from '@/types/database';
-import { UniMateStore } from '@/lib/store';
-import { INITIAL_PROFILES } from '@/lib/mock-data';
-
-// Permanent Credentials Store
-export const PERMANENT_ACCOUNTS = {
-  ADMIN: {
-    email: 'admin@kfueit.edu.pk',
-    password: 'AdminPassword123!',
-    role: 'admin' as UserRole,
-    name: 'Dr. Sarah Hayes',
-    title: 'University Dean of Students & Campus Administrator'
-  },
-  STUDENT: {
-    email: 'student@kfueit.edu.pk',
-    password: 'StudentPassword123!',
-    role: 'student' as UserRole,
-    name: 'Alex Rivera',
-    title: 'BS Computer Science • Semester 4'
-  }
-};
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 
 interface AuthContextType {
   user: Profile | null;
@@ -29,6 +10,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isStudent: boolean;
   isLoading: boolean;
+  isConfigured: boolean;
   login: (email: string, password?: string) => Promise<{ success: boolean; error?: string; role?: UserRole }>;
   signup: (data: {
     email: string;
@@ -40,9 +22,9 @@ interface AuthContextType {
     studentId?: string;
     avatarUrl?: string;
   }) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
-  switchUser: (role: UserRole) => void;
-  updateCurrentUserProfile: (updates: Partial<Profile>) => void;
+  logout: () => Promise<void>;
+  switchUser?: (role: UserRole) => void;
+  updateCurrentUserProfile: (updates: Partial<Profile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,78 +32,142 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isConfigured, setIsConfigured] = useState<boolean>(false);
+
+  const loadProfile = async (userId: string, email: string) => {
+    const supabase = createClient();
+    if (!supabase) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (data) {
+        setUser(data as Profile);
+      } else {
+        // Fallback create profile if trigger was delayed
+        const fallback: Profile = {
+          id: userId,
+          email: email.toLowerCase(),
+          full_name: email.split('@')[0],
+          role: email.toLowerCase().includes('admin') ? 'admin' : 'student',
+          is_suspended: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        await supabase.from('profiles').upsert(fallback);
+        setUser(fallback);
+      }
+    } catch (err) {
+      console.error('Failed loading profile from Supabase:', err);
+    }
+  };
 
   useEffect(() => {
-    // Load persisted user or default to Alex Rivera (Student)
-    const storedUserId = typeof window !== 'undefined' ? localStorage.getItem('unimate_active_user_id') : null;
-    const profiles = UniMateStore.getProfiles();
-    
-    if (storedUserId) {
-      const found = profiles.find((p) => p.id === storedUserId);
-      if (found) {
-        setUser(found);
-        setIsLoading(false);
-        return;
-      }
+    const configured = isSupabaseConfigured();
+    setIsConfigured(configured);
+
+    const supabase = createClient();
+    if (!supabase) {
+      setUser(null);
+      setIsLoading(false);
+      return;
     }
 
-    // No stored user -> visitor remains unauthenticated (null)
-    setUser(null);
-    setIsLoading(false);
+    let isMounted = true;
+
+    // Check active session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
+      if (session?.user) {
+        loadProfile(session.user.id, session.user.email || '').finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+      } else {
+        setUser(null);
+        setIsLoading(false);
+      }
+    });
+
+    // Listen to Supabase Auth state changes (sign in, sign out, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+      if (session?.user) {
+        loadProfile(session.user.id, session.user.email || '');
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = async (email: string, password?: string): Promise<{ success: boolean; error?: string; role?: UserRole }> => {
+  const login = async (
+    email: string, 
+    password?: string
+  ): Promise<{ success: boolean; error?: string; role?: UserRole }> => {
     setIsLoading(true);
-    await new Promise((res) => setTimeout(res, 350));
-
     const cleanEmail = email.trim().toLowerCase();
-    const profiles = UniMateStore.getProfiles();
-    let found = profiles.find((p) => p.email.toLowerCase() === cleanEmail);
 
-    // Support alias if user types alex.rivera@kfueit.edu.pk or student@kfueit.edu.pk
-    if (!found && (cleanEmail === 'alex.rivera@kfueit.edu.pk' || cleanEmail === 'student@kfueit.edu.pk')) {
-      found = profiles.find((p) => p.email.toLowerCase() === 'student@kfueit.edu.pk' || p.email.toLowerCase() === 'alex.rivera@kfueit.edu.pk');
-    }
-
-    if (!found) {
+    const supabase = createClient();
+    if (!supabase) {
       setIsLoading(false);
-      return { success: false, error: 'No university account found with this email address.' };
+      return { 
+        success: false, 
+        error: 'Supabase credentials are not configured in .env.local. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.' 
+      };
     }
 
-    if (found.is_suspended) {
+    if (!password) {
       setIsLoading(false);
-      return { success: false, error: 'This account has been suspended by campus moderators.' };
+      return { success: false, error: 'Please provide your account password.' };
     }
 
-    // Password Validation
-    if (password) {
-      let expectedPassword = '';
-      if (cleanEmail === PERMANENT_ACCOUNTS.ADMIN.email || cleanEmail === 'admin@kfueit.edu.pk') {
-        expectedPassword = PERMANENT_ACCOUNTS.ADMIN.password;
-      } else if (cleanEmail === PERMANENT_ACCOUNTS.STUDENT.email || cleanEmail === 'alex.rivera@kfueit.edu.pk' || cleanEmail === 'student@kfueit.edu.pk') {
-        expectedPassword = PERMANENT_ACCOUNTS.STUDENT.password;
-      } else {
-        // Check registered passwords in localStorage
-        try {
-          const registeredPasswords = JSON.parse(localStorage.getItem('unimate_passwords') || '{}');
-          expectedPassword = registeredPasswords[cleanEmail] || 'StudentPassword123!';
-        } catch {
-          expectedPassword = 'StudentPassword123!';
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password: password
+      });
+
+      if (error) {
+        setIsLoading(false);
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (profile?.is_suspended) {
+          await supabase.auth.signOut();
+          setUser(null);
+          setIsLoading(false);
+          return { success: false, error: 'This university account has been suspended by campus moderators.' };
+        }
+
+        if (profile) {
+          setUser(profile as Profile);
+          setIsLoading(false);
+          return { success: true, role: profile.role };
         }
       }
 
-      if (password !== expectedPassword) {
-        setIsLoading(false);
-        return { success: false, error: 'Incorrect password. Please verify your credentials.' };
-      }
+      setIsLoading(false);
+      return { success: true, role: 'student' };
+    } catch (err: any) {
+      setIsLoading(false);
+      return { success: false, error: err?.message || 'Authentication failed. Please try again.' };
     }
-
-    setUser(found);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('unimate_active_user_id', found.id);
-    }
-    setIsLoading(false);
-    return { success: true, role: found.role };
   };
 
   const signup = async (data: {
@@ -135,98 +181,98 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     avatarUrl?: string;
   }): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
-    await new Promise((res) => setTimeout(res, 400));
+    const cleanEmail = data.email.trim().toLowerCase();
 
-    // Validate university domain
-    const settings = UniMateStore.getSettings();
-    const allowedDomains = settings.allowed_email_domains || ['kfueit.edu.pk'];
-    const emailDomain = data.email.split('@')[1]?.toLowerCase();
-
-    const isDomainAllowed = allowedDomains.some((d) => emailDomain === d.toLowerCase() || emailDomain?.endsWith('.' + d.toLowerCase()));
-    if (!isDomainAllowed) {
+    const supabase = createClient();
+    if (!supabase) {
       setIsLoading(false);
-      return {
-        success: false,
-        error: `Email domain must be an approved university domain (${allowedDomains.join(', ')}).`
+      return { 
+        success: false, 
+        error: 'Supabase is not configured in .env.local. Please add your Supabase credentials.' 
       };
     }
 
-    const profiles = UniMateStore.getProfiles();
-    const existing = profiles.find((p) => p.email.toLowerCase() === data.email.toLowerCase());
-    if (existing) {
+    try {
+      const { data: authResult, error: authError } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password: data.password || 'KFUEITStudent2026!',
+        options: {
+          data: {
+            full_name: data.fullName,
+            role: 'student',
+            department_id: data.departmentId,
+            program: data.program,
+            semester: data.semester,
+            student_id: data.studentId,
+            avatar_url: data.avatarUrl
+          }
+        }
+      });
+
+      if (authError) {
+        setIsLoading(false);
+        return { success: false, error: authError.message };
+      }
+
+      const newUserId = authResult.user?.id;
+      if (newUserId) {
+        const profileRecord: Partial<Profile> = {
+          id: newUserId,
+          email: cleanEmail,
+          full_name: data.fullName,
+          role: 'student',
+          department_id: data.departmentId || undefined,
+          program: data.program,
+          semester: data.semester,
+          student_id: data.studentId || undefined,
+          avatar_url: data.avatarUrl || undefined,
+          bio: `Enrolled student in ${data.program}.`,
+          is_suspended: false,
+          updated_at: new Date().toISOString()
+        };
+
+        await supabase.from('profiles').upsert(profileRecord);
+
+        const fullProfile = {
+          ...profileRecord,
+          created_at: new Date().toISOString()
+        } as Profile;
+
+        setUser(fullProfile);
+      }
+
       setIsLoading(false);
-      return { success: false, error: 'An account with this university email already exists.' };
+      return { success: true };
+    } catch (err: any) {
+      setIsLoading(false);
+      return { success: false, error: err?.message || 'Failed to complete registration.' };
     }
-
-    const departments = UniMateStore.getDepartments();
-    const dept = departments.find((d) => d.id === data.departmentId);
-
-    const newProfile: Profile = {
-      id: 'usr_' + Date.now(),
-      email: data.email.toLowerCase(),
-      full_name: data.fullName,
-      role: 'student',
-      department_id: data.departmentId,
-      department_name: dept?.name || 'General Studies',
-      program: data.program,
-      semester: data.semester,
-      student_id: data.studentId || 'S-' + Math.floor(1000 + Math.random() * 9000),
-      avatar_url: data.avatarUrl || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80`,
-      bio: `Enrolled student in ${data.program} (${dept?.name || 'University'}).`,
-      is_suspended: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    // Save registered password
-    if (data.password && typeof window !== 'undefined') {
-      try {
-        const passwords = JSON.parse(localStorage.getItem('unimate_passwords') || '{}');
-        passwords[newProfile.email] = data.password;
-        localStorage.setItem('unimate_passwords', JSON.stringify(passwords));
-      } catch (err) {
-        console.error('Failed saving password:', err);
-      }
-    }
-
-    UniMateStore.saveProfile(newProfile);
-    setUser(newProfile);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('unimate_active_user_id', newProfile.id);
-    }
-    setIsLoading(false);
-    return { success: true };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const supabase = createClient();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     setUser(null);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('unimate_active_user_id');
-    }
   };
 
-  const switchUser = (targetRole: UserRole) => {
-    const profiles = UniMateStore.getProfiles();
-    if (targetRole === 'admin') {
-      const admin = profiles.find((p) => p.role === 'admin') || INITIAL_PROFILES[0];
-      setUser(admin);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('unimate_active_user_id', admin.id);
-      }
-    } else {
-      const student = profiles.find((p) => p.role === 'student' && p.email.includes('alex')) || profiles.find((p) => p.role === 'student') || INITIAL_PROFILES[1];
-      setUser(student);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('unimate_active_user_id', student.id);
-      }
-    }
-  };
-
-  const updateCurrentUserProfile = (updates: Partial<Profile>) => {
+  const updateCurrentUserProfile = async (updates: Partial<Profile>) => {
     if (!user) return;
-    const updated = { ...user, ...updates };
+    const updated = { ...user, ...updates, updated_at: new Date().toISOString() };
     setUser(updated);
-    UniMateStore.saveProfile(updated);
+
+    const supabase = createClient();
+    if (supabase) {
+      try {
+        await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', user.id);
+      } catch (err) {
+        console.error('Failed to sync profile update with Supabase:', err);
+      }
+    }
   };
 
   return (
@@ -237,10 +283,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin: user?.role === 'admin',
         isStudent: user?.role === 'student',
         isLoading,
+        isConfigured,
         login,
         signup,
         logout,
-        switchUser,
         updateCurrentUserProfile
       }}
     >

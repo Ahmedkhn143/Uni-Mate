@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ShieldAlert, ArrowLeft, LogIn, Lock, Key } from 'lucide-react';
-import { useAuth, PERMANENT_ACCOUNTS } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth-context';
 
 export function AdminAccessDenied() {
   const { user, logout } = useAuth();

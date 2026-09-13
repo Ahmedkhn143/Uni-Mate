@@ -28,7 +28,7 @@ import {
   Layers,
   Sparkles
 } from 'lucide-react';
-import { useAuth, PERMANENT_ACCOUNTS } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
 import { Report, PastPaper, Profile } from '@/types/database';
 import { AdminAccessDenied } from '@/components/ui/AdminAccessDenied';
@@ -139,7 +139,7 @@ export default function AdminDashboardPage() {
               Dean & Administrator Command Center
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Logged in as <strong className="text-amber-300">{user?.full_name}</strong> ({PERMANENT_ACCOUNTS.ADMIN.title}). Supervise student safety, academic content approvals, account standing, and emergency broadcasts.
+              Logged in as <strong className="text-amber-300">{user?.full_name || 'Administrator'}</strong> ({user?.program || 'Campus Dean & Platform Administrator'}). Supervise student safety, academic content approvals, account standing, and emergency broadcasts.
             </p>
           </div>
 

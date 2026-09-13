@@ -297,9 +297,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Profiles Policies
-CREATE POLICY "Profiles are viewable by authenticated users" 
-ON public.profiles FOR SELECT TO authenticated USING (TRUE);
+-- -- Profiles Policies
+CREATE POLICY "Profiles are viewable by all" 
+ON public.profiles FOR SELECT USING (TRUE);
+
+CREATE POLICY "Users can insert their own profile" 
+ON public.profiles FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
 
 CREATE POLICY "Users can update their own profile" 
 ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
@@ -350,6 +353,34 @@ USING (auth.uid() = author_id OR public.is_admin());
 
 CREATE POLICY "Users can delete own answers or admins can moderate" 
 ON public.answers FOR DELETE TO authenticated 
+USING (auth.uid() = author_id OR public.is_admin());
+
+-- Comments Policies
+CREATE POLICY "Comments are readable by all" 
+ON public.comments FOR SELECT USING (TRUE);
+
+CREATE POLICY "Authenticated users can insert comments" 
+ON public.comments FOR INSERT TO authenticated 
+WITH CHECK (auth.uid() = author_id AND NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_suspended = TRUE));
+
+CREATE POLICY "Users can delete own comments or admins can moderate" 
+ON public.comments FOR DELETE TO authenticated 
+USING (auth.uid() = author_id OR public.is_admin());
+
+-- Posts Policies
+CREATE POLICY "Posts are readable by all" 
+ON public.posts FOR SELECT USING (TRUE);
+
+CREATE POLICY "Authenticated users can create posts" 
+ON public.posts FOR INSERT TO authenticated 
+WITH CHECK (auth.uid() = author_id AND NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_suspended = TRUE));
+
+CREATE POLICY "Users can update own posts or admins can moderate" 
+ON public.posts FOR UPDATE TO authenticated 
+USING (auth.uid() = author_id OR public.is_admin());
+
+CREATE POLICY "Users can delete own posts or admins can moderate" 
+ON public.posts FOR DELETE TO authenticated 
 USING (auth.uid() = author_id OR public.is_admin());
 
 -- Lost & Found Policies
@@ -457,3 +488,55 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- =====================================================================
+-- INITIAL ACADEMIC & SYSTEM SEED DATA
+-- =====================================================================
+
+INSERT INTO public.system_settings (
+    id, university_name, allowed_email_domains, allow_public_viewing, max_upload_size_mb, maintenance_mode, announcement_banner
+) VALUES (
+    1,
+    'Khwaja Fareed University of Engineering & Information Technology (KFUEIT)',
+    ARRAY['kfueit.edu.pk'],
+    TRUE,
+    25,
+    FALSE,
+    '📢 Welcome to UniMate - Official KFUEIT Student Community & Academic Repository!'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.semesters (id, number, name) VALUES
+    ('00000000-0000-0000-0000-000000000001', 1, 'Semester 1 (Freshman Fall)'),
+    ('00000000-0000-0000-0000-000000000002', 2, 'Semester 2 (Freshman Spring)'),
+    ('00000000-0000-0000-0000-000000000003', 3, 'Semester 3 (Sophomore Fall)'),
+    ('00000000-0000-0000-0000-000000000004', 4, 'Semester 4 (Sophomore Spring)'),
+    ('00000000-0000-0000-0000-000000000005', 5, 'Semester 5 (Junior Fall)'),
+    ('00000000-0000-0000-0000-000000000006', 6, 'Semester 6 (Junior Spring)'),
+    ('00000000-0000-0000-0000-000000000007', 7, 'Semester 7 (Senior Fall)'),
+    ('00000000-0000-0000-0000-000000000008', 8, 'Semester 8 (Senior Spring)')
+ON CONFLICT (number) DO NOTHING;
+
+INSERT INTO public.departments (id, name, code, description) VALUES
+    ('d1111111-1111-1111-1111-111111111111', 'Department of Computer Science & Information Technology', 'CS-IT', 'BSCS, BS Software Engineering, Artificial Intelligence, Data Science, and IT programs.'),
+    ('d2222222-2222-2222-2222-222222222222', 'Department of Electrical Engineering', 'EE', 'Power systems, telecommunications, electronics, and digital signal processing.'),
+    ('d3333333-3333-3333-3333-333333333333', 'Department of Mechanical Engineering', 'ME', 'Thermodynamics, robotics, fluid mechanics, design engineering, and manufacturing.'),
+    ('d4444444-4444-4444-4444-444444444444', 'Department of Civil Engineering', 'CE', 'Structural analysis, geotechnical engineering, surveying, and environmental engineering.'),
+    ('d5555555-5555-5555-5555-555555555555', 'Department of Management Sciences', 'MS', 'Bachelor of Business Administration (BBA), Accounting & Finance, and Supply Chain.'),
+    ('d6666666-6666-6666-6666-666666666666', 'Department of Basic Sciences & Humanities', 'BSH', 'Applied Mathematics, Physics, Chemistry, English Communication, and Islamic Studies.'),
+    ('d7777777-7777-7777-7777-777777777777', 'Department of Chemical & Materials Engineering', 'CME', 'Process engineering, petroleum engineering, and material science studies.')
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO public.subjects (department_id, semester_id, name, code, description, credits) VALUES
+    ('d1111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000001', 'Programming Fundamentals', 'CS-101', 'Introduction to algorithms, procedural programming in C/C++, pointers, and memory.', 4),
+    ('d1111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000002', 'Object Oriented Programming', 'CS-102', 'OOP concepts, encapsulation, polymorphism, inheritance, classes, and templates.', 4),
+    ('d1111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000003', 'Data Structures & Algorithms', 'CS-201', 'Stacks, queues, linked lists, trees, graphs, sorting, and asymptotic analysis.', 4),
+    ('d1111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000004', 'Database Systems', 'CS-202', 'Relational database design, ER modeling, SQL, normalization, and transactions.', 4),
+    ('d1111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000004', 'Operating Systems', 'CS-204', 'Process concurrency, scheduling, virtual memory management, and Linux internals.', 4),
+    ('d1111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000005', 'Computer Networks', 'CS-301', 'OSI reference model, TCP/IP stack, routing protocols, and subnetting.', 3),
+    ('d2222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000001', 'Linear Circuit Analysis', 'EE-101', 'Kirchhoff voltage and current laws, mesh/nodal analysis, and AC steady state.', 4),
+    ('d2222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000003', 'Digital Logic Design', 'EE-201', 'Boolean algebra, combinational logic, Karnaugh maps, and flip-flops.', 4),
+    ('d3333333-3333-3333-3333-333333333333', '00000000-0000-0000-0000-000000000002', 'Engineering Thermodynamics', 'ME-102', 'First and second laws of thermodynamics, Carnot cycle, and steam properties.', 3),
+    ('d4444444-4444-4444-4444-444444444444', '00000000-0000-0000-0000-000000000003', 'Structural Mechanics', 'CE-201', 'Stress and strain transformations, bending moments, and shearing force diagrams.', 4),
+    ('d5555555-5555-5555-5555-555555555555', '00000000-0000-0000-0000-000000000001', 'Financial Accounting', 'BA-101', 'Double-entry bookkeeping, general ledger, income statements, and auditing.', 3),
+    ('d6666666-6666-6666-6666-666666666666', '00000000-0000-0000-0000-000000000001', 'Calculus & Analytical Geometry', 'MATH-101', 'Limits, differential calculus, integration techniques, and vectors.', 3)
+ON CONFLICT (code) DO NOTHING;

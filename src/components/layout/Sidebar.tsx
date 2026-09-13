@@ -23,7 +23,7 @@ import {
   Sun,
   Moon
 } from 'lucide-react';
-import { useAuth, PERMANENT_ACCOUNTS } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth-context';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useTheme } from '@/lib/theme-context';
 

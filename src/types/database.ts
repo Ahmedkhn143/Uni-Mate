@@ -284,4 +284,5 @@ export interface SystemSettings {
   max_upload_size_mb: number;
   maintenance_mode: boolean;
   announcement_banner?: string;
+  updated_at?: string;
 }
