@@ -29,14 +29,7 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [semester, setSemester] = useState(user?.semester || 1);
-  const [program, setProgram] = useState(() => {
-    if (!user?.program) return 'BS Computer Science';
-    return (KFUEIT_PROGRAMS as readonly string[]).includes(user.program) ? user.program : 'Other';
-  });
-  const [customProgram, setCustomProgram] = useState(() => {
-    if (!user?.program) return '';
-    return (KFUEIT_PROGRAMS as readonly string[]).includes(user.program) ? '' : user.program;
-  });
+  const [program, setProgram] = useState(user?.program || '');
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url || null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,13 +64,13 @@ export default function ProfilePage() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const resolvedProg = (program === 'Other' ? customProgram : (customProgram ? `${program} (${customProgram})` : program)) || 'BS Computer Science';
+    const resolvedProg = program.trim() || 'BS Computer Science';
 
     updateCurrentUserProfile({
       full_name: fullName.trim(),
       bio: bio.trim(),
       semester: Number(semester),
-      program: resolvedProg.trim(),
+      program: resolvedProg,
       avatar_url: avatarPreview || undefined
     });
     setIsEditing(false);
@@ -208,26 +201,14 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Degree Program</label>
-                <select
-                  value={program}
-                  onChange={(e) => setProgram(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
-                >
-                  <option value="">Select Degree Program (Optional)</option>
-                  {KFUEIT_PROGRAMS.map((prog) => (
-                    <option key={prog} value={prog}>{prog}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Specialization / Track (Optional)</label>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Degree Program <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
                 <input
                   type="text"
-                  value={customProgram}
-                  onChange={(e) => setCustomProgram(e.target.value)}
-                  placeholder="e.g. Cyber Security, AI Track"
+                  value={program}
+                  onChange={(e) => setProgram(e.target.value)}
+                  placeholder="e.g. Computer Science, Cyber Security, etc."
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
                 />
               </div>

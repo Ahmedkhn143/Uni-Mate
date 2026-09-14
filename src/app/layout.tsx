@@ -26,6 +26,7 @@ export const metadata: Metadata = {
   description: 'Connect with verified campus peers, access solved past exam papers, recover lost items, and discover university scholarships in one prestige platform.',
   keywords: ['university', 'students', 'past papers', 'lost and found', 'scholarships', 'q&a', 'college community', 'kfueit'],
   authors: [{ name: 'UniMate Platform' }],
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

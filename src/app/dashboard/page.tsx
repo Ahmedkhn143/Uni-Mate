@@ -47,7 +47,6 @@ export default function DashboardPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editFullName, setEditFullName] = useState('');
   const [editProgram, setEditProgram] = useState('');
-  const [editCustomProgram, setEditCustomProgram] = useState('');
   const [editSemester, setEditSemester] = useState(1);
   const [editBio, setEditBio] = useState('');
   const [editAvatarPreview, setEditAvatarPreview] = useState<string | null>(null);
@@ -57,18 +56,7 @@ export default function DashboardPage() {
   const openEditProfile = () => {
     if (!user) return;
     setEditFullName(user.full_name || '');
-    
-    if (user.program && (KFUEIT_PROGRAMS as readonly string[]).includes(user.program)) {
-      setEditProgram(user.program);
-      setEditCustomProgram('');
-    } else if (user.program) {
-      setEditProgram('Other');
-      setEditCustomProgram(user.program);
-    } else {
-      setEditProgram('BS Computer Science');
-      setEditCustomProgram('');
-    }
-    
+    setEditProgram(user.program || '');
     setEditSemester(user.semester || 1);
     setEditBio(user.bio || '');
     setEditAvatarPreview(user.avatar_url || null);
@@ -97,11 +85,11 @@ export default function DashboardPage() {
     if (!user) return;
     setSavingProfile(true);
 
-    const resolvedProg = (editProgram === 'Other' ? editCustomProgram : (editCustomProgram ? `${editProgram} (${editCustomProgram})` : editProgram)) || 'BS Computer Science';
+    const finalProgram = editProgram.trim() || 'BS Computer Science';
 
     await updateCurrentUserProfile({
       full_name: editFullName.trim(),
-      program: resolvedProg.trim(),
+      program: finalProgram,
       semester: Number(editSemester),
       bio: editBio.trim(),
       avatar_url: editAvatarPreview || undefined
@@ -666,52 +654,35 @@ export default function DashboardPage() {
                 />
               </div>
 
-              {/* Degree Program: 2 Boxes (Program Dropdown + Custom/Specialization) */}
+              {/* Degree Program & Semester */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Degree Program
+                    Degree Program <span className="text-slate-400 font-normal">(Optional)</span>
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={editProgram}
                     onChange={(e) => setEditProgram(e.target.value)}
+                    placeholder="e.g. Computer Science, Cyber Security, etc."
                     className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
-                  >
-                    <option value="">Select Degree Program (Optional)</option>
-                    {KFUEIT_PROGRAMS.map((prog) => (
-                      <option key={prog} value={prog}>{prog}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Specialization / Track (Optional)
+                    Current Semester
                   </label>
-                  <input
-                    type="text"
-                    value={editCustomProgram}
-                    onChange={(e) => setEditCustomProgram(e.target.value)}
-                    placeholder="e.g. Cyber Security, AI Track"
+                  <select
+                    value={editSemester}
+                    onChange={(e) => setEditSemester(Number(e.target.value))}
                     className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
-                  />
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                      <option key={s} value={s}>Semester {s}</option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-
-              {/* Current Semester */}
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Current Semester
-                </label>
-                <select
-                  value={editSemester}
-                  onChange={(e) => setEditSemester(Number(e.target.value))}
-                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                    <option key={s} value={s}>Semester {s}</option>
-                  ))}
-                </select>
               </div>
 
               {/* Bio */}

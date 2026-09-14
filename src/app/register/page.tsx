@@ -40,8 +40,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [departmentId, setDepartmentId] = useState('');
-  const [program, setProgram] = useState('BS Computer Science');
-  const [customProgram, setCustomProgram] = useState('');
+  const [customDepartment, setCustomDepartment] = useState('');
+  const [program, setProgram] = useState('');
   const [semester, setSemester] = useState(1);
 
   // Optional Profile Picture
@@ -143,15 +143,16 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    const resolvedProgram = (program === 'Other' ? customProgram : (customProgram ? `${program} (${customProgram})` : program)) || 'BS Computer Science';
+    const finalDept = departmentId === 'other' ? (customDepartment.trim() || 'Other Department') : (departmentId || 'cs');
+    const finalProgram = program.trim() || 'BS Computer Science';
 
     // Call Supabase signup - this triggers a real verification email with OTP to the user's university inbox
     const res = await signup({
       fullName: fullName.trim(),
       email: cleanEmail,
       password,
-      departmentId,
-      program: resolvedProgram.trim(),
+      departmentId: finalDept,
+      program: finalProgram,
       semester: Number(semester),
       avatarUrl: avatarPreview || undefined
     });
@@ -243,15 +244,16 @@ export default function RegisterPage() {
     setSuccessMsg('');
     setLoading(true);
 
-    const resolvedProgram = (program === 'Other' ? customProgram : (customProgram ? `${program} (${customProgram})` : program)) || 'BS Computer Science';
+    const finalDept = departmentId === 'other' ? (customDepartment.trim() || 'Other Department') : (departmentId || 'cs');
+    const finalProgram = program.trim() || 'BS Computer Science';
 
     const res = await verifyOtp(
       email.trim().toLowerCase(),
       entered,
       {
         fullName: fullName.trim(),
-        departmentId,
-        program: resolvedProgram.trim(),
+        departmentId: finalDept,
+        program: finalProgram,
         semester: Number(semester),
         avatarUrl: avatarPreview || undefined
       }
@@ -412,7 +414,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Department & Current Semester */}
+            {/* Department & Degree Program */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -428,59 +430,52 @@ export default function RegisterPage() {
                       {d.name} ({d.code})
                     </option>
                   ))}
+                  <option value="other" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
+                    Other Department / Faculty...
+                  </option>
                 </select>
+
+                {departmentId === 'other' && (
+                  <input
+                    type="text"
+                    value={customDepartment}
+                    onChange={(e) => setCustomDepartment(e.target.value)}
+                    placeholder="Type your department name"
+                    className="w-full mt-1.5 px-3 py-2 text-xs rounded-xl border border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/40 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                  />
+                )}
               </div>
 
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Current Semester <span className="text-slate-400 font-normal">(Optional)</span>
-                </label>
-                <select
-                  value={semester}
-                  onChange={(e) => setSemester(Number(e.target.value))}
-                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                    <option key={num} value={num} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                      Semester {num}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Program Selection: 2 Boxes (Program Dropdown + Custom/Specialization) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   Degree Program <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
-                <select
-                  value={program}
-                  onChange={(e) => setProgram(e.target.value)}
-                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
-                >
-                  <option value="">Select Degree Program (Optional)</option>
-                  {KFUEIT_PROGRAMS.map((prog) => (
-                    <option key={prog} value={prog} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                      {prog}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Specialization / Custom Program <span className="text-slate-400 font-normal">(Optional)</span>
-                </label>
                 <input
                   type="text"
-                  value={customProgram}
-                  onChange={(e) => setCustomProgram(e.target.value)}
-                  placeholder="e.g. Cyber Security, AI Track"
+                  value={program}
+                  onChange={(e) => setProgram(e.target.value)}
+                  placeholder="e.g. Computer Science, Cyber Security, etc."
                   className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
                 />
               </div>
+            </div>
+
+            {/* Current Semester */}
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Current Semester <span className="text-slate-400 font-normal">(Optional)</span>
+              </label>
+              <select
+                value={semester}
+                onChange={(e) => setSemester(Number(e.target.value))}
+                className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                  <option key={num} value={num} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                    Semester {num}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Password & Confirm */}
