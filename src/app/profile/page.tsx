@@ -13,10 +13,14 @@ import {
   Edit3, 
   Save, 
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Camera,
+  Upload,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
+import { KFUEIT_PROGRAMS } from '@/lib/constants';
 
 export default function ProfilePage() {
   const { user, updateCurrentUserProfile } = useAuth();
@@ -25,8 +29,31 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [semester, setSemester] = useState(user?.semester || 1);
-  const [program, setProgram] = useState(user?.program || '');
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
+  const [program, setProgram] = useState(() => {
+    if (!user?.program) return 'BS Computer Science';
+    return (KFUEIT_PROGRAMS as readonly string[]).includes(user.program) ? user.program : 'Other';
+  });
+  const [customProgram, setCustomProgram] = useState(() => {
+    if (!user?.program) return '';
+    return (KFUEIT_PROGRAMS as readonly string[]).includes(user.program) ? '' : user.program;
+  });
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url || null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Profile photo must be less than 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   if (!user) {
     return (
@@ -44,12 +71,14 @@ export default function ProfilePage() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    const resolvedProg = (program === 'Other' ? customProgram : (customProgram ? `${program} (${customProgram})` : program)) || 'BS Computer Science';
+
     updateCurrentUserProfile({
       full_name: fullName.trim(),
       bio: bio.trim(),
       semester: Number(semester),
-      program: program.trim(),
-      avatar_url: avatarUrl.trim() || undefined
+      program: resolvedProg.trim(),
+      avatar_url: avatarPreview || undefined
     });
     setIsEditing(false);
   };
@@ -88,12 +117,6 @@ export default function ProfilePage() {
                 <span>{user.program}</span>
                 <span>•</span>
                 <span>Semester {user.semester || 1}</span>
-                {user.student_id && (
-                  <>
-                    <span>•</span>
-                    <span className="text-slate-400">ID: {user.student_id}</span>
-                  </>
-                )}
               </div>
             </div>
           </div>
@@ -117,6 +140,49 @@ export default function ProfilePage() {
           <form onSubmit={handleSave} className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Edit Profile Details</h3>
             
+            {/* Avatar Image File Upload */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <div className="relative shrink-0">
+                {avatarPreview ? (
+                  <img
+                    src={avatarPreview}
+                    alt="Preview"
+                    className="w-18 h-18 rounded-2xl object-cover ring-4 ring-indigo-500/20 shadow-md"
+                  />
+                ) : (
+                  <div className="w-18 h-18 rounded-2xl bg-indigo-600 text-white font-black text-2xl flex items-center justify-center">
+                    {fullName.charAt(0) || 'U'}
+                  </div>
+                )}
+                {avatarPreview && (
+                  <button
+                    type="button"
+                    onClick={() => setAvatarPreview(null)}
+                    className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center shadow-md hover:bg-red-700 transition"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-1 text-center sm:text-left flex-1">
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Profile Photo
+                </label>
+                <p className="text-[11px] text-slate-500">Upload JPG, PNG or WEBP from your device (Max 5MB)</p>
+                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 mt-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer shadow-sm transition">
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Choose Photo</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
@@ -124,16 +190,6 @@ export default function ProfilePage() {
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Degree Program</label>
-                <input
-                  type="text"
-                  value={program}
-                  onChange={(e) => setProgram(e.target.value)}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
                 />
               </div>
@@ -152,12 +208,26 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Avatar Image URL</label>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Degree Program</label>
+                <select
+                  value={program}
+                  onChange={(e) => setProgram(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                >
+                  <option value="">Select Degree Program (Optional)</option>
+                  {KFUEIT_PROGRAMS.map((prog) => (
+                    <option key={prog} value={prog}>{prog}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Specialization / Track (Optional)</label>
                 <input
-                  type="url"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="https://example.com/photo.jpg"
+                  type="text"
+                  value={customProgram}
+                  onChange={(e) => setCustomProgram(e.target.value)}
+                  placeholder="e.g. Cyber Security, AI Track"
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
                 />
               </div>

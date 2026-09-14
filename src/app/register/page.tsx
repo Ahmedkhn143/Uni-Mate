@@ -25,6 +25,7 @@ import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
 import { Department } from '@/types/database';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { KFUEIT_PROGRAMS } from '@/lib/constants';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -40,8 +41,8 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [program, setProgram] = useState('BS Computer Science');
+  const [customProgram, setCustomProgram] = useState('');
   const [semester, setSemester] = useState(1);
-  const [studentId, setStudentId] = useState('');
 
   // Optional Profile Picture
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -142,15 +143,16 @@ export default function RegisterPage() {
 
     setLoading(true);
 
+    const resolvedProgram = (program === 'Other' ? customProgram : (customProgram ? `${program} (${customProgram})` : program)) || 'BS Computer Science';
+
     // Call Supabase signup - this triggers a real verification email with OTP to the user's university inbox
     const res = await signup({
       fullName: fullName.trim(),
       email: cleanEmail,
       password,
       departmentId,
-      program,
+      program: resolvedProgram.trim(),
       semester: Number(semester),
-      studentId: studentId.trim() || undefined,
       avatarUrl: avatarPreview || undefined
     });
 
@@ -241,15 +243,16 @@ export default function RegisterPage() {
     setSuccessMsg('');
     setLoading(true);
 
+    const resolvedProgram = (program === 'Other' ? customProgram : (customProgram ? `${program} (${customProgram})` : program)) || 'BS Computer Science';
+
     const res = await verifyOtp(
       email.trim().toLowerCase(),
       entered,
       {
         fullName: fullName.trim(),
         departmentId,
-        program,
+        program: resolvedProgram.trim(),
         semester: Number(semester),
-        studentId: studentId.trim() || undefined,
         avatarUrl: avatarPreview || undefined
       }
     );
@@ -409,7 +412,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Department & Program */}
+            {/* Department & Current Semester */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -430,24 +433,7 @@ export default function RegisterPage() {
 
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Degree Program
-                </label>
-                <input
-                  type="text"
-                  value={program}
-                  onChange={(e) => setProgram(e.target.value)}
-                  placeholder="e.g. BS Computer Science"
-                  required
-                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
-                />
-              </div>
-            </div>
-
-            {/* Semester & Student ID */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Current Semester
+                  Current Semester <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <select
                   value={semester}
@@ -461,16 +447,37 @@ export default function RegisterPage() {
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* Program Selection: 2 Boxes (Program Dropdown + Custom/Specialization) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Degree Program <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <select
+                  value={program}
+                  onChange={(e) => setProgram(e.target.value)}
+                  className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
+                >
+                  <option value="">Select Degree Program (Optional)</option>
+                  {KFUEIT_PROGRAMS.map((prog) => (
+                    <option key={prog} value={prog} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                      {prog}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Student Roll / ID (Optional)
+                  Specialization / Custom Program <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <input
                   type="text"
-                  value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  placeholder="e.g. CS24-102"
+                  value={customProgram}
+                  onChange={(e) => setCustomProgram(e.target.value)}
+                  placeholder="e.g. Cyber Security, AI Track"
                   className="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition"
                 />
               </div>
