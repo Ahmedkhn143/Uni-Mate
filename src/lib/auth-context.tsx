@@ -21,7 +21,20 @@ interface AuthContextType {
     semester: number;
     studentId?: string;
     avatarUrl?: string;
-  }) => Promise<{ success: boolean; error?: string }>;
+  }) => Promise<{ success: boolean; error?: string; requiresVerification?: boolean }>;
+  verifyOtp: (
+    email: string,
+    token: string,
+    profileData?: {
+      fullName: string;
+      departmentId?: string;
+      program?: string;
+      semester?: number;
+      studentId?: string;
+      avatarUrl?: string;
+    }
+  ) => Promise<{ success: boolean; error?: string }>;
+  resendOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   switchUser?: (role: UserRole) => void;
   updateCurrentUserProfile: (updates: Partial<Profile>) => Promise<void>;
@@ -79,7 +92,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let isMounted = true;
 
-    // Check active session on mount
+    // 1. Check local storage for active student session
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('unimate_active_user') : null;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.email) {
+          setUser(parsed);
+          setIsLoading(false);
+        }
+      } catch (e) {
+        console.warn('Could not restore local user session:', e);
+      }
+    }
+
+    // 2. Check active Supabase session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!isMounted) return;
       if (session?.user) {
@@ -87,7 +114,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (isMounted) setIsLoading(false);
         });
       } else {
-        setUser(null);
+        if (!saved) {
+          setUser(null);
+        }
         setIsLoading(false);
       }
     });
@@ -98,7 +127,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         loadProfile(session.user.id, session.user.email || '');
       } else {
-        setUser(null);
+        const localSaved = typeof window !== 'undefined' ? localStorage.getItem('unimate_active_user') : null;
+        if (!localSaved) {
+          setUser(null);
+        }
       }
       setIsLoading(false);
     });
@@ -137,6 +169,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
+        // If email confirmation is pending, reject login strictly
+        if (error.message?.toLowerCase().includes('email not confirmed')) {
+          setIsLoading(false);
+          return { 
+            success: false, 
+            error: 'Your university email has not been verified yet. Please register or verify the OTP code sent to your @kfueit.edu.pk inbox.' 
+          };
+        }
+
         setIsLoading(false);
         return { success: false, error: error.message };
       }
@@ -156,6 +197,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (profile) {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('unimate_active_user', JSON.stringify(profile));
+          }
           setUser(profile as Profile);
           setIsLoading(false);
           return { success: true, role: profile.role };
@@ -179,80 +223,134 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     semester: number;
     studentId?: string;
     avatarUrl?: string;
-  }): Promise<{ success: boolean; error?: string }> => {
+  }): Promise<{ success: boolean; error?: string; requiresVerification?: boolean }> => {
     setIsLoading(true);
     const cleanEmail = data.email.trim().toLowerCase();
 
-    const supabase = createClient();
-    if (!supabase) {
-      setIsLoading(false);
-      return { 
-        success: false, 
-        error: 'Supabase is not configured in .env.local. Please add your Supabase credentials.' 
-      };
-    }
-
     try {
-      const { data: authResult, error: authError } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password: data.password || 'KFUEITStudent2026!',
-        options: {
-          data: {
-            full_name: data.fullName,
-            role: 'student',
-            department_id: data.departmentId,
-            program: data.program,
-            semester: data.semester,
-            student_id: data.studentId,
-            avatar_url: data.avatarUrl
-          }
-        }
+      // 1. Send real verification email code via API
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: cleanEmail,
+          fullName: data.fullName
+        })
       });
 
-      if (authError) {
+      const resData = await response.json();
+      if (!response.ok || !resData.success) {
         setIsLoading(false);
-        return { success: false, error: authError.message };
+        return { success: false, error: resData.error || 'Failed to send verification code.' };
       }
 
-      const newUserId = authResult.user?.id;
-      if (newUserId) {
-        const profileRecord: Partial<Profile> = {
-          id: newUserId,
+      // Also trigger Supabase signup in background
+      const supabase = createClient();
+      if (supabase) {
+        await supabase.auth.signUp({
           email: cleanEmail,
-          full_name: data.fullName,
-          role: 'student',
-          department_id: data.departmentId || undefined,
-          program: data.program,
-          semester: data.semester,
-          student_id: data.studentId || undefined,
-          avatar_url: data.avatarUrl || undefined,
-          bio: `Enrolled student in ${data.program}.`,
-          is_suspended: false,
-          updated_at: new Date().toISOString()
-        };
-
-        await supabase.from('profiles').upsert(profileRecord);
-
-        const fullProfile = {
-          ...profileRecord,
-          created_at: new Date().toISOString()
-        } as Profile;
-
-        setUser(fullProfile);
+          password: data.password || 'KFUEITStudent2026!',
+          options: {
+            data: {
+              full_name: data.fullName,
+              role: 'student',
+              department_id: data.departmentId,
+              program: data.program,
+              semester: data.semester,
+              student_id: data.studentId,
+              avatar_url: data.avatarUrl
+            }
+          }
+        }).catch(() => {});
       }
 
+      setIsLoading(false);
+      return { success: true, requiresVerification: true };
+    } catch (err: any) {
+      setIsLoading(false);
+      return { success: false, error: err?.message || 'Failed to dispatch verification code.' };
+    }
+  };
+
+  const verifyOtp = async (
+    email: string,
+    token: string,
+    profileData?: {
+      fullName: string;
+      departmentId?: string;
+      program?: string;
+      semester?: number;
+      studentId?: string;
+      avatarUrl?: string;
+    }
+  ): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanToken = token.trim();
+
+    try {
+      // Strict verification - verify against actual dispatched code
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: cleanEmail,
+          code: cleanToken,
+          profileData
+        })
+      });
+
+      const resData = await response.json();
+
+      if (!response.ok || !resData.success) {
+        setIsLoading(false);
+        return { 
+          success: false, 
+          error: resData.error || 'Invalid or expired confirmation code. Please check your email.' 
+        };
+      }
+
+      const verifiedProfile = resData.profile as Profile;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('unimate_active_user', JSON.stringify(verifiedProfile));
+      }
+
+      setUser(verifiedProfile);
       setIsLoading(false);
       return { success: true };
     } catch (err: any) {
       setIsLoading(false);
-      return { success: false, error: err?.message || 'Failed to complete registration.' };
+      return { success: false, error: err?.message || 'Verification failed. Please try again.' };
+    }
+  };
+
+  const resendOtp = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanEmail = email.trim().toLowerCase();
+    try {
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail })
+      });
+
+      const resData = await response.json();
+      if (!response.ok || !resData.success) {
+        return { success: false, error: resData.error || 'Failed to resend confirmation code.' };
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to resend confirmation code.' };
     }
   };
 
   const logout = async () => {
     const supabase = createClient();
     if (supabase) {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut().catch(() => {});
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('unimate_active_user');
     }
     setUser(null);
   };
@@ -286,6 +384,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isConfigured,
         login,
         signup,
+        verifyOtp,
+        resendOtp,
         logout,
         updateCurrentUserProfile
       }}

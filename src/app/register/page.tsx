@@ -28,7 +28,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { signup } = useAuth();
+  const { signup, verifyOtp, resendOtp } = useAuth();
 
   // Registration step: 'form' | 'otp'
   const [step, setStep] = useState<'form' | 'otp'>('form');
@@ -48,16 +48,15 @@ export default function RegisterPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // OTP Verification State
-  const [generatedOtp, setGeneratedOtp] = useState<string>('');
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [resendTimer, setResendTimer] = useState<number>(60);
-  const [showSimulatedEmailToast, setShowSimulatedEmailToast] = useState<boolean>(false);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Metadata & Feedback
   const [departments, setDepartments] = useState<Department[]>([]);
   const [allowedDomains, setAllowedDomains] = useState<string[]>(['kfueit.edu.pk']);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -108,10 +107,11 @@ export default function RegisterPage() {
     }
   };
 
-  // Step 1: Validate Form & Send Email Verification Code
+  // Step 1: Validate Form & Send Real Email Verification Code
   const handleInitiateVerification = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
 
     if (!fullName.trim()) {
       setError('Please enter your full name.');
@@ -131,14 +131,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Check if account already exists
-    const profiles = UniMateStore.getProfiles();
-    const existing = profiles.find((p) => p.email.toLowerCase() === cleanEmail);
-    if (existing) {
-      setError('An account with this university email already exists. Please sign in instead.');
-      return;
-    }
-
     if (password.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
@@ -150,17 +142,40 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    // Generate 6-digit confirmation code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
-    setOtpDigits(['', '', '', '', '', '']);
-    setResendTimer(60);
+    // Call Supabase signup - this triggers a real verification email with OTP to the user's university inbox
+    const res = await signup({
+      fullName: fullName.trim(),
+      email: cleanEmail,
+      password,
+      departmentId,
+      program,
+      semester: Number(semester),
+      studentId: studentId.trim() || undefined,
+      avatarUrl: avatarPreview || undefined
+    });
 
-    setTimeout(() => {
-      setLoading(false);
+    setLoading(false);
+
+    if (res.success) {
+      if (res.requiresVerification === false) {
+        router.push('/dashboard');
+        return;
+      }
+      setOtpDigits(['', '', '', '', '', '']);
+      setResendTimer(60);
+      setSuccessMsg(`We sent a 6-digit confirmation code to ${cleanEmail}. Please check your inbox.`);
       setStep('otp');
-      setShowSimulatedEmailToast(true);
-    }, 400);
+    } else {
+      const errMsg = res.error?.toLowerCase() || '';
+      if (errMsg.includes('already registered')) {
+        setError('An account with this university email already exists. Please sign in instead.');
+      } else if (errMsg.includes('rate limit') || errMsg.includes('over_email_send_rate_limit')) {
+        setError('A confirmation email was recently sent to this address. Please check your inbox (or spam folder) or wait a minute before resending.');
+        setStep('otp');
+      } else {
+        setError(res.error || 'Failed to send confirmation email. Please try again.');
+      }
+    }
   };
 
   // Handle OTP Digit Input
@@ -195,20 +210,21 @@ export default function RegisterPage() {
     }
   };
 
-  const handleAutoFillCode = () => {
-    if (generatedOtp) {
-      setOtpDigits(generatedOtp.split(''));
-      setError('');
-    }
-  };
-
-  const handleResendCode = () => {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
-    setOtpDigits(['', '', '', '', '', '']);
-    setResendTimer(60);
-    setShowSimulatedEmailToast(true);
+  const handleResendCode = async () => {
+    if (resendTimer > 0) return;
     setError('');
+    setSuccessMsg('');
+    setLoading(true);
+
+    const res = await resendOtp(email.trim().toLowerCase());
+    setLoading(false);
+
+    if (res.success) {
+      setResendTimer(60);
+      setSuccessMsg(`A new confirmation code has been sent to ${email.trim().toLowerCase()}.`);
+    } else {
+      setError(res.error || 'Failed to resend confirmation code. Please wait a moment before trying again.');
+    }
   };
 
   // Step 2: Complete Registration upon OTP Verification
@@ -217,34 +233,32 @@ export default function RegisterPage() {
     const entered = otpDigits.join('');
 
     if (entered.length < 6) {
-      setError('Please enter all 6 digits of the verification code.');
-      return;
-    }
-
-    if (entered !== generatedOtp) {
-      setError('Invalid confirmation code. Please check the code sent to your email.');
+      setError('Please enter all 6 digits of the confirmation code sent to your university email.');
       return;
     }
 
     setError('');
+    setSuccessMsg('');
     setLoading(true);
 
-    const res = await signup({
-      fullName: fullName.trim(),
-      email: email.trim().toLowerCase(),
-      password,
-      departmentId,
-      program,
-      semester: Number(semester),
-      studentId: studentId.trim() || undefined,
-      avatarUrl: avatarPreview || undefined
-    });
+    const res = await verifyOtp(
+      email.trim().toLowerCase(),
+      entered,
+      {
+        fullName: fullName.trim(),
+        departmentId,
+        program,
+        semester: Number(semester),
+        studentId: studentId.trim() || undefined,
+        avatarUrl: avatarPreview || undefined
+      }
+    );
     setLoading(false);
 
     if (res.success) {
       router.push('/dashboard');
     } else {
-      setError(res.error || 'Failed to create student account. Please try again.');
+      setError(res.error || 'Failed to activate student account. Please try again.');
     }
   };
 
@@ -269,49 +283,6 @@ export default function RegisterPage() {
       {/* Ambient glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-gradient-to-tr from-indigo-600/10 via-purple-600/10 to-emerald-500/10 blur-3xl pointer-events-none -z-10 rounded-full" />
 
-      {/* Simulated Incoming University Email Notification */}
-      {showSimulatedEmailToast && (
-        <div className="fixed top-5 right-5 z-50 max-w-md w-full bg-white dark:bg-slate-900 border-2 border-indigo-500 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-top-4 duration-300 text-slate-900 dark:text-slate-100">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
-                <Mail className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">KFUEIT University Mail</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">New Message</span>
-                </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-300">
-                  Your Student Registration Code is: <strong className="font-mono text-indigo-600 dark:text-indigo-400 text-sm tracking-widest">{generatedOtp}</strong>
-                </p>
-                <p className="text-[10px] text-slate-400">
-                  Sent to: <span className="font-mono">{email}</span>
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowSimulatedEmailToast(false)}
-              className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={handleAutoFillCode}
-              className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 transition"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              Click here to Auto-fill Code ({generatedOtp})
-            </button>
-            <span className="text-[10px] text-slate-400">Exp: 10 mins</span>
-          </div>
-        </div>
-      )}
-
       {/* Main Registration Card */}
       <div className="max-w-xl w-full bg-white/95 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 p-5 sm:p-8 rounded-3xl shadow-xl dark:shadow-2xl backdrop-blur-xl space-y-6 transition-colors">
         
@@ -328,9 +299,17 @@ export default function RegisterPage() {
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {step === 'form' 
               ? `Join UniMate using your university domain (@kfueit.edu.pk).`
-              : `Enter the 6-digit confirmation code sent to ${email}`}
+              : `Enter the 6-digit confirmation code sent to your inbox: ${email}`}
           </p>
         </div>
+
+        {/* Success Alert */}
+        {successMsg && (
+          <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200 text-xs flex items-center gap-2.5 animate-in fade-in duration-150">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <span className="leading-snug">{successMsg}</span>
+          </div>
+        )}
 
         {/* Error Alert */}
         {error && (
@@ -561,23 +540,15 @@ export default function RegisterPage() {
             
             <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/60 space-y-2">
               <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 dark:text-indigo-300">
-                <KeyRound className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                <span>Verification Code Sent</span>
+                <Mail className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>Verification Code Sent to Email</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300">
                 We sent a 6-digit confirmation code to <strong className="text-slate-900 dark:text-white font-mono">{email}</strong> to verify your university identity.
               </p>
-              {generatedOtp && (
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={handleAutoFillCode}
-                    className="text-[11px] text-amber-600 dark:text-amber-400 hover:underline font-medium"
-                  >
-                    Quick Auto-fill demo code: {generatedOtp}
-                  </button>
-                </div>
-              )}
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Please check your university inbox (and <strong>Spam / Junk</strong> folder if not found in primary inbox) and enter the 6-digit code below.
+              </p>
             </div>
 
             {/* 6 Digit Inputs */}
@@ -612,7 +583,7 @@ export default function RegisterPage() {
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    Creating Your Student Account...
+                    Verifying 6-Digit Code...
                   </span>
                 ) : (
                   <>
@@ -641,6 +612,17 @@ export default function RegisterPage() {
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>{resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend Code'}</span>
                 </button>
+              </div>
+
+              {/* Troubleshooting Note for University Email Filters */}
+              <div className="p-3 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
+                <div className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>Not seeing the email in your inbox?</span>
+                </div>
+                <p className="leading-relaxed">
+                  University Google Workspace emails often filter automated system messages into the <strong>Spam / Junk</strong> folder. Please open your Spam folder or wait a moment for the mail server to synchronize.
+                </p>
               </div>
             </div>
           </form>
