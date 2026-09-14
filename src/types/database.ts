@@ -119,6 +119,7 @@ export interface Post {
   comments_count: number;
   comments?: Comment[];
   is_pinned?: boolean;
+  status?: 'pending' | 'approved' | 'rejected';
   created_at: string;
 }
 

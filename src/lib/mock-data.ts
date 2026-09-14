@@ -27,8 +27,23 @@ export const INITIAL_SETTINGS: SystemSettings = {
   announcement_banner: '📢 Welcome to UniMate - Official KFUEIT Student Community Platform'
 };
 
-// All demo/mock user data has been removed. Active data is loaded dynamically from Supabase.
-export const INITIAL_PROFILES: Profile[] = [];
+// Pre-configured Campus Administrator: Ahmad Khan
+export const INITIAL_PROFILES: Profile[] = [
+  {
+    id: 'admin-ahmad-khan-2026',
+    email: 'ahmad.admin@kfueit.edu.pk',
+    full_name: 'Ahmad Khan',
+    role: 'admin',
+    department_id: 'd1111111-1111-1111-1111-111111111111',
+    department_name: 'Department of Computer Science & IT',
+    program: 'BS Computer Science (Super Admin)',
+    semester: 8,
+    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    is_suspended: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
 
 export const INITIAL_DEPARTMENTS: Department[] = [
   {
@@ -173,15 +188,83 @@ export const INITIAL_SUBJECTS: Subject[] = [
   }
 ];
 
-// Clean empty collections for user generated content (populated from live Supabase)
+// Collections for user generated content with pending moderation items
 export const INITIAL_QUESTIONS: Question[] = [];
 export const INITIAL_ANSWERS: Answer[] = [];
-export const INITIAL_POSTS: Post[] = [];
+
+// Seeded pending post awaiting admin moderation
+export const INITIAL_POSTS: Post[] = [
+  {
+    id: 'post-pending-demo-1',
+    author_id: 'student-usman-84',
+    author_name: 'Usman Ali (Roll # CS-2022-84)',
+    author_avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+    author_role: 'student',
+    category: 'resource',
+    title: 'Hand-Written Complete Notes & Solved Papers for Data Structures (CS-201)',
+    content: 'Assalam-o-Alaikum peers, I have compiled high-quality lecture notes, diagrams, and solved midterm questions for Data Structures & Algorithms (CS-201). Requesting the campus administrator to review and approve so all students can benefit!',
+    tags: ['CS201', 'DataStructures', 'MidtermPrep', 'Notes'],
+    likes: 0,
+    comments_count: 0,
+    status: 'pending',
+    created_at: new Date(Date.now() - 3600000).toISOString()
+  }
+];
+
 export const INITIAL_LOST_FOUND: LostFoundItem[] = [];
-export const INITIAL_PAST_PAPERS: PastPaper[] = [];
+
+// Seeded pending past paper awaiting verification
+export const INITIAL_PAST_PAPERS: PastPaper[] = [
+  {
+    id: 'paper-pending-demo-1',
+    uploader_id: 'student-hamza-19',
+    uploader_name: 'Hamza Tariq (Roll # CS-2023-19)',
+    department_id: 'd1111111-1111-1111-1111-111111111111',
+    department_name: 'Department of Computer Science & IT',
+    subject_id: 's_cs201',
+    subject_name: 'Data Structures & Algorithms',
+    subject_code: 'CS-201',
+    semester_number: 3,
+    year: 2025,
+    exam_type: 'midterm',
+    title: 'CS-201 Midterm Exam Spring 2025 (Official Exam Paper)',
+    file_url: '/sample-papers/CS201_Midterm_2025.pdf',
+    file_name: 'CS201_Midterm_Spring2025_Exam.pdf',
+    file_size_kb: 2450,
+    downloads: 0,
+    status: 'pending',
+    created_at: new Date(Date.now() - 7200000).toISOString()
+  }
+];
+
 export const INITIAL_SCHOLARSHIPS: Scholarship[] = [];
 export const INITIAL_CONVERSATIONS: Conversation[] = [];
 export const INITIAL_MESSAGES: Message[] = [];
-export const INITIAL_NOTIFICATIONS: Notification[] = [];
+
+// High-priority unread admin notifications for Ahmad Khan
+export const INITIAL_NOTIFICATIONS: Notification[] = [
+  {
+    id: 'notif-admin-post-1',
+    user_id: 'admin-ahmad-khan-2026',
+    type: 'report_status',
+    title: '🔔 Student Post Awaiting Admin Approval',
+    message: 'Usman Ali submitted "Hand-Written Complete Notes & Solved Papers for Data Structures". Please review and approve or reject.',
+    link: '/admin',
+    is_read: false,
+    created_at: new Date(Date.now() - 3600000).toISOString()
+  },
+  {
+    id: 'notif-admin-paper-1',
+    user_id: 'admin-ahmad-khan-2026',
+    type: 'report_status',
+    title: '📄 Exam Paper Verification Required',
+    message: 'Hamza Tariq submitted "CS-201 Midterm Exam Spring 2025" for official campus library inclusion.',
+    link: '/admin',
+    is_read: false,
+    created_at: new Date(Date.now() - 7200000).toISOString()
+  }
+];
+
 export const INITIAL_REPORTS: Report[] = [];
 export const INITIAL_BOOKMARKS: Bookmark[] = [];
+

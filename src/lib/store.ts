@@ -833,8 +833,36 @@ export class UniMateStore {
   }
 
   // --- COMMUNITY POSTS ---
-  public static getPosts(): Post[] {
-    return this.posts;
+  public static getPosts(filterRole?: string, currentUserId?: string): Post[] {
+    if (filterRole === 'admin') {
+      return this.posts;
+    }
+    return this.posts.filter((p) => p.status === 'approved' || !p.status || p.author_id === currentUserId);
+  }
+
+  public static setPostStatus(postId: string, status: 'approved' | 'rejected'): void {
+    const p = this.posts.find((item) => item.id === postId);
+    if (!p) return;
+    p.status = status;
+    this.notify();
+
+    // Send notification to the post author
+    this.addNotification({
+      user_id: p.author_id,
+      type: 'report_status',
+      title: status === 'approved' ? '✅ Post Approved & Published' : '⚠️ Post Moderation Notice',
+      message: status === 'approved'
+        ? `Your post "${p.title}" was approved by Ahmad Khan and is now published live on Campus Feed.`
+        : `Your post "${p.title}" was reviewed and declined by the moderation team.`,
+      link: '/community'
+    });
+
+    const supabase = createClient();
+    if (supabase) {
+      supabase.from('posts').update({ status }).eq('id', postId).then(({ error }) => {
+        if (error) console.error('Error updating post status in Supabase:', error);
+      });
+    }
   }
 
   public static createPost(data: {
@@ -846,6 +874,7 @@ export class UniMateStore {
     image_url?: string;
   }): Post {
     const tempId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'post_' + Date.now();
+    const isApproved = data.author.role === 'admin';
     const newPost: Post = {
       id: tempId,
       author_id: data.author.id,
@@ -860,10 +889,22 @@ export class UniMateStore {
       likes: 0,
       comments_count: 0,
       comments: [],
+      status: isApproved ? 'approved' : 'pending',
       created_at: new Date().toISOString()
     };
     this.posts.unshift(newPost);
     this.notify();
+
+    // If student post is pending, trigger an admin notification
+    if (!isApproved) {
+      this.addNotification({
+        user_id: 'admin-ahmad-khan-2026',
+        type: 'report_status',
+        title: '🔔 Student Post Awaiting Admin Approval',
+        message: `"${data.title}" submitted by ${data.author.full_name} is awaiting moderation.`,
+        link: '/admin'
+      });
+    }
 
     const supabase = createClient();
     if (supabase) {
@@ -873,7 +914,8 @@ export class UniMateStore {
         title: data.title,
         content: data.content,
         image_url: data.image_url || null,
-        tags: data.tags
+        tags: data.tags,
+        status: newPost.status
       }).select().single().then(({ data: created, error }) => {
         if (created) {
           newPost.id = created.id;
@@ -1031,6 +1073,17 @@ export class UniMateStore {
     this.pastPapers.unshift(newPaper);
     this.notify();
 
+    // If student paper is pending, notify admin
+    if (newPaper.status === 'pending') {
+      this.addNotification({
+        user_id: 'admin-ahmad-khan-2026',
+        type: 'report_status',
+        title: '📄 Exam Paper Verification Required',
+        message: `${data.uploader.full_name} submitted "${data.title}" for campus library moderation.`,
+        link: '/admin'
+      });
+    }
+
     const supabase = createClient();
     if (supabase) {
       supabase.from('past_papers').insert({
@@ -1060,6 +1113,17 @@ export class UniMateStore {
     if (!p) return;
     p.status = status;
     this.notify();
+
+    // Notify uploader of decision
+    this.addNotification({
+      user_id: p.uploader_id,
+      type: 'report_status',
+      title: status === 'approved' ? '✅ Past Paper Approved!' : '⚠️ Past Paper Moderation Notice',
+      message: status === 'approved'
+        ? `Your exam paper "${p.title}" was approved by Ahmad Khan and is now available in the Past Papers Library.`
+        : `Your exam paper "${p.title}" was reviewed and declined.`,
+      link: '/past-papers'
+    });
 
     const supabase = createClient();
     if (supabase) {
@@ -1290,7 +1354,11 @@ export class UniMateStore {
 
   // --- NOTIFICATIONS ---
   public static getNotifications(userId: string): Notification[] {
-    return this.notifications.filter((n) => n.user_id === userId);
+    const profile = this.profiles.find((p) => p.id === userId);
+    const isAdmin = userId === 'admin-ahmad-khan-2026' || profile?.role === 'admin';
+    return this.notifications.filter(
+      (n) => n.user_id === userId || (isAdmin && (n.user_id === 'admin-ahmad-khan-2026' || n.user_id === 'admin'))
+    );
   }
 
   public static addNotification(data: Omit<Notification, 'id' | 'created_at' | 'is_read'>): Notification {
@@ -1418,6 +1486,8 @@ export class UniMateStore {
       foundItems: this.lostFound.filter((i) => i.type === 'found').length,
       pastPapersCount: this.pastPapers.filter((p) => p.status === 'approved').length,
       pendingPapers: this.pastPapers.filter((p) => p.status === 'pending').length,
+      pendingPosts: this.posts.filter((p) => p.status === 'pending').length,
+      totalPosts: this.posts.filter((p) => p.status === 'approved' || !p.status).length,
       activeScholarships: this.scholarships.filter((s) => s.status !== 'closed').length,
       pendingReports: this.reports.filter((r) => r.status === 'pending').length
     };

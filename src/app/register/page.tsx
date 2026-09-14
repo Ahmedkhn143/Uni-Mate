@@ -123,12 +123,16 @@ export default function RegisterPage() {
       return;
     }
 
-    // Check @kfueit.edu.pk domain
+    // Check university domain (@kfueit.edu.pk or *.edu.pk)
     const cleanEmail = email.trim().toLowerCase();
-    const domain = cleanEmail.split('@')[1]?.toLowerCase();
-    const isAllowed = allowedDomains.some((d) => domain === d || domain?.endsWith('.' + d));
+    const domain = cleanEmail.split('@')[1]?.toLowerCase() || '';
+    const isAllowed = 
+      allowedDomains.some((d) => domain === d || domain.endsWith('.' + d)) ||
+      domain.endsWith('.edu.pk') ||
+      domain === 'kfueit.edu.pk';
+
     if (!isAllowed) {
-      setError(`Your email must end with an approved university domain (${allowedDomains.map(d => '@' + d).join(', ')}).`);
+      setError(`Your email must end with an approved university domain (${allowedDomains.map(d => '@' + d).join(', ')} or @*.edu.pk).`);
       return;
     }
 
@@ -166,7 +170,7 @@ export default function RegisterPage() {
       }
       setOtpDigits(['', '', '', '', '', '']);
       setResendTimer(60);
-      setSuccessMsg(`We sent a 6-digit confirmation code to ${cleanEmail}. Please check your inbox.`);
+      setSuccessMsg(`We sent a 6-digit confirmation code to ${cleanEmail}. Please check your Inbox and Spam/Junk folder.`);
       setStep('otp');
     } else {
       const errMsg = res.error?.toLowerCase() || '';

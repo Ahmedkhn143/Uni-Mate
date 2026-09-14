@@ -53,11 +53,11 @@ export default function CommunityPage() {
 
   useEffect(() => {
     const load = () => {
-      setPosts(UniMateStore.getPosts());
+      setPosts(UniMateStore.getPosts(user?.role, user?.id));
     };
     load();
     return UniMateStore.subscribe(load);
-  }, []);
+  }, [user]);
 
   const handleLike = (postId: string) => {
     UniMateStore.toggleLikePost(postId);

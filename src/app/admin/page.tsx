@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
-import { Report, PastPaper, Profile } from '@/types/database';
+import { Report, PastPaper, Profile, Post } from '@/types/database';
 import { AdminAccessDenied } from '@/components/ui/AdminAccessDenied';
 
 export default function AdminDashboardPage() {
@@ -39,9 +39,10 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [pendingPapers, setPendingPapers] = useState<PastPaper[]>([]);
+  const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [studentSearch, setStudentSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'moderation' | 'papers' | 'students' | 'broadcast'>('moderation');
+  const [activeTab, setActiveTab] = useState<'posts' | 'moderation' | 'papers' | 'students' | 'broadcast'>('posts');
   
   // Broadcast Announcement State
   const [broadcastTitle, setBroadcastTitle] = useState('');
@@ -61,6 +62,7 @@ export default function AdminDashboardPage() {
       setStats(UniMateStore.getStats());
       setReports(UniMateStore.getReports());
       setPendingPapers(UniMateStore.getPastPapers().filter((p) => p.status === 'pending'));
+      setPendingPosts(UniMateStore.getPosts('admin').filter((p) => p.status === 'pending'));
       setProfiles(UniMateStore.getProfiles());
     };
     load();
@@ -79,6 +81,11 @@ export default function AdminDashboardPage() {
   const handlePaperStatus = (paperId: string, status: 'approved' | 'rejected') => {
     UniMateStore.setPastPaperStatus(paperId, status);
     showNotice(`Past paper status updated to ${status}.`);
+  };
+
+  const handlePostStatus = (postId: string, status: 'approved' | 'rejected') => {
+    UniMateStore.setPostStatus(postId, status);
+    showNotice(`Community post ${status === 'approved' ? 'approved & published' : 'rejected'}.`);
   };
 
   const handleToggleSuspend = (targetUserId: string, name: string) => {
@@ -158,7 +165,7 @@ export default function AdminDashboardPage() {
 
       {/* 2. KEY METRICS CARDS */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           
           {/* Total Students */}
           <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1">
@@ -194,6 +201,18 @@ export default function AdminDashboardPage() {
             <div className="text-xs text-slate-500 font-medium">Exam Papers Pending</div>
           </div>
 
+          {/* Pending Community Posts (Emerald Alert) */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border-2 border-emerald-500/40 dark:border-emerald-500/30 shadow-sm space-y-1">
+            <div className="flex items-center justify-between text-emerald-600">
+              <Layers className="w-5 h-5" />
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                Approval
+              </span>
+            </div>
+            <div className="text-2xl font-black text-emerald-600">{stats.pendingPosts}</div>
+            <div className="text-xs text-slate-500 font-medium">Posts Awaiting Review</div>
+          </div>
+
           {/* Academic Q&A Solved */}
           <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1">
             <div className="flex items-center justify-between text-purple-600 dark:text-purple-400">
@@ -222,6 +241,23 @@ export default function AdminDashboardPage() {
         
         {/* Tab Header Bar */}
         <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 pt-4 gap-2 sm:gap-4 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('posts')}
+            className={`pb-3 text-xs font-bold flex items-center gap-2 border-b-2 transition shrink-0 ${
+              activeTab === 'posts'
+                ? 'border-emerald-600 text-emerald-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Pending Posts</span>
+            {pendingPosts.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-black animate-pulse">
+                {pendingPosts.length}
+              </span>
+            )}
+          </button>
+
           <button
             onClick={() => setActiveTab('moderation')}
             className={`pb-3 text-xs font-bold flex items-center gap-2 border-b-2 transition shrink-0 ${
@@ -280,6 +316,78 @@ export default function AdminDashboardPage() {
         {/* Tab Body */}
         <div className="p-4 sm:p-6">
           
+          {/* TAB 0: PENDING POSTS APPROVAL */}
+          {activeTab === 'posts' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Student Community Posts — Approval Desk
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Review student-submitted community posts. Approved posts go live on Campus Feed. Rejected posts are hidden.
+                </p>
+              </div>
+
+              {pendingPosts.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 text-xs">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                  All community posts are reviewed! No pending submissions.
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {pendingPosts.map((post) => (
+                    <div key={post.id} className="py-4 flex flex-col md:flex-row md:items-start justify-between gap-4">
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                            {post.title}
+                          </span>
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                            PENDING
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                            {post.category}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
+                          {post.content}
+                        </p>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                          <span>By <strong>{post.author_name}</strong></span>
+                          <span>•</span>
+                          <span>{new Date(post.created_at).toLocaleString()}</span>
+                          {post.tags.length > 0 && (
+                            <>
+                              <span>•</span>
+                              <span className="text-indigo-500">#{post.tags.join(' #')}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                        <button
+                          onClick={() => handlePostStatus(post.id, 'approved')}
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          Approve & Publish
+                        </button>
+                        <button
+                          onClick={() => handlePostStatus(post.id, 'rejected')}
+                          className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-600 font-bold text-xs flex items-center gap-1 transition"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* TAB 1: MODERATION QUEUE */}
           {activeTab === 'moderation' && (
             <div className="space-y-4">

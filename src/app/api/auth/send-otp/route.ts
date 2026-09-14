@@ -13,15 +13,22 @@ export async function POST(request: Request) {
 
     const cleanEmail = email.trim().toLowerCase();
 
-    // Verify university domain
+    // Verify university domain: Allow configured domains, subdomains, and recognized educational domains (*.edu.pk)
     const allowedDomain = process.env.NEXT_PUBLIC_UNIVERSITY_EMAIL_DOMAIN || 'kfueit.edu.pk';
     const domainList = allowedDomain.split(',').map((d) => d.trim().toLowerCase());
-    const emailDomain = cleanEmail.split('@')[1]?.toLowerCase();
+    const emailDomain = cleanEmail.split('@')[1]?.toLowerCase() || '';
 
-    const isAllowed = domainList.some((d) => emailDomain === d || emailDomain?.endsWith('.' + d));
+    const isAllowed = 
+      domainList.some((d) => emailDomain === d || emailDomain.endsWith('.' + d)) ||
+      emailDomain.endsWith('.edu.pk') ||
+      emailDomain === 'kfueit.edu.pk';
+
     if (!isAllowed) {
       return NextResponse.json(
-        { success: false, error: `Only approved university email addresses (@${domainList.join(', @')}) are allowed.` },
+        { 
+          success: false, 
+          error: `Please provide an approved university email address (@${domainList.join(', @')} or any university @*.edu.pk domain).` 
+        },
         { status: 400 }
       );
     }
@@ -36,12 +43,19 @@ export async function POST(request: Request) {
     const emailResult = await sendVerificationEmail(cleanEmail, code, fullName);
 
     if (!emailResult.success) {
-      console.warn('Failed to send email via primary SMTP:', emailResult.error);
+      console.error('[UniMate Email Error] SMTP dispatch failed:', emailResult.error);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Could not deliver verification email: ${emailResult.error || 'Recipient rejected by mail server'}. Please verify the address and try again.` 
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      message: `A 6-digit confirmation code has been sent to ${cleanEmail}.`
+      message: `A 6-digit confirmation code has been sent to ${cleanEmail}. Please check your Inbox and Spam/Junk folder.`
     });
   } catch (err: any) {
     return NextResponse.json(

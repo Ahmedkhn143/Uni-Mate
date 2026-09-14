@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Profile, UserRole } from '@/types/database';
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
+import { UniMateStore } from '@/lib/store';
 
 interface AuthContextType {
   user: Profile | null;
@@ -160,6 +161,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!password) {
       setIsLoading(false);
       return { success: false, error: 'Please provide your account password.' };
+    }
+
+    // 1. Official Super Administrator Authentication for Ahmad Khan
+    const isAdminEmailMatch = 
+      cleanEmail === 'ahmad.admin@kfueit.edu.pk' ||
+      cleanEmail === 'ahmadkhan.admin@kfueit.edu.pk' ||
+      cleanEmail === 'ahmad.khan@kfueit.edu.pk' ||
+      cleanEmail === 'ahmadkha8143@gmail.com';
+
+    if (isAdminEmailMatch) {
+      if (password === 'AhmadKhan@KFUEIT2026!#Admin') {
+        const adminProfile: Profile = {
+          id: 'admin-ahmad-khan-2026',
+          email: cleanEmail,
+          full_name: 'Ahmad Khan',
+          role: 'admin',
+          department_id: 'd1111111-1111-1111-1111-111111111111',
+          department_name: 'Department of Computer Science & IT',
+          program: 'BS Computer Science (Super Admin)',
+          semester: 8,
+          avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+          is_suspended: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('unimate_active_user', JSON.stringify(adminProfile));
+        }
+        UniMateStore.saveProfile(adminProfile);
+        setUser(adminProfile);
+        setIsLoading(false);
+        return { success: true, role: 'admin' };
+      } else {
+        setIsLoading(false);
+        return { success: false, error: 'Incorrect administrator password for Ahmad Khan.' };
+      }
     }
 
     try {
