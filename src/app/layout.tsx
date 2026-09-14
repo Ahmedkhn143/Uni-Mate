@@ -28,6 +28,9 @@ export const metadata: Metadata = {
   keywords: ['university', 'students', 'past papers', 'lost and found', 'scholarships', 'q&a', 'college community', 'kfueit'],
   authors: [{ name: 'UniMate Platform' }],
   manifest: '/manifest.json',
+  verification: {
+    google: 'google6ea23c10c93f9b0b',
+  },
 };
 
 export default function RootLayout({
