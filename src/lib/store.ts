@@ -116,6 +116,13 @@ export class UniMateStore {
           if (parsed.departments?.length) this.departments = parsed.departments;
           if (parsed.subjects?.length) this.subjects = parsed.subjects;
         }
+        const cachedProfiles = localStorage.getItem('unimate_cached_profiles');
+        if (cachedProfiles) {
+          const parsedProfiles = JSON.parse(cachedProfiles);
+          if (parsedProfiles && Array.isArray(parsedProfiles) && parsedProfiles.length) {
+            this.profiles = parsedProfiles;
+          }
+        }
       } catch (e) {}
     }
 
@@ -175,24 +182,38 @@ export class UniMateStore {
       // 4. Fetch Profiles
       const { data: dbProfiles } = await supabase
         .from('profiles')
-        .select('*, departments(name)');
+        .select('*, departments(name)')
+        .order('created_at', { ascending: false });
       if (dbProfiles) {
-        this.profiles = dbProfiles.map((p: any) => ({
-          id: p.id,
-          email: p.email,
-          full_name: p.full_name,
-          role: p.role,
-          department_id: p.department_id,
-          department_name: p.departments?.name,
-          program: p.program,
-          semester: p.semester,
-          avatar_url: p.avatar_url,
-          bio: p.bio,
-          student_id: p.student_id,
-          is_suspended: p.is_suspended || false,
-          created_at: p.created_at,
-          updated_at: p.updated_at
-        }));
+        const merged = [...INITIAL_PROFILES];
+        dbProfiles.forEach((p: any) => {
+          const mapped: Profile = {
+            id: p.id,
+            email: p.email,
+            full_name: p.full_name || p.email.split('@')[0],
+            role: p.role || 'student',
+            department_id: p.department_id,
+            department_name: p.departments?.name,
+            program: p.program || 'Degree Student',
+            semester: p.semester ? Number(p.semester) : undefined,
+            avatar_url: p.avatar_url,
+            bio: p.bio,
+            student_id: p.student_id,
+            is_suspended: p.is_suspended || false,
+            created_at: p.created_at,
+            updated_at: p.updated_at
+          };
+          const existingIdx = merged.findIndex(
+            (m) => m.id === mapped.id || m.email.toLowerCase() === mapped.email.toLowerCase()
+          );
+          if (existingIdx >= 0) {
+            merged[existingIdx] = { ...merged[existingIdx], ...mapped };
+          } else {
+            merged.push(mapped);
+          }
+        });
+        this.profiles = merged;
+        this.persistProfiles();
       }
 
       // 5. Fetch Questions (joined with author profile, department, subject, answers count)
@@ -485,17 +506,78 @@ export class UniMateStore {
     return this.profiles;
   }
 
+  public static async syncProfiles(): Promise<Profile[]> {
+    if (!isSupabaseConfigured()) return this.profiles;
+    const supabase = createClient();
+    if (!supabase) return this.profiles;
+
+    try {
+      const { data: dbProfiles } = await supabase
+        .from('profiles')
+        .select('*, departments(name)')
+        .order('created_at', { ascending: false });
+
+      if (dbProfiles && dbProfiles.length > 0) {
+        const merged = [...this.profiles];
+        INITIAL_PROFILES.forEach((initP) => {
+          if (!merged.some((m) => m.email.toLowerCase() === initP.email.toLowerCase())) {
+            merged.push(initP);
+          }
+        });
+
+        dbProfiles.forEach((p: any) => {
+          const mapped: Profile = {
+            id: p.id,
+            email: p.email,
+            full_name: p.full_name || p.email.split('@')[0],
+            role: p.role || 'student',
+            department_id: p.department_id,
+            department_name: p.departments?.name,
+            program: p.program || 'Degree Student',
+            semester: p.semester ? Number(p.semester) : undefined,
+            avatar_url: p.avatar_url,
+            bio: p.bio,
+            student_id: p.student_id,
+            is_suspended: p.is_suspended || false,
+            created_at: p.created_at,
+            updated_at: p.updated_at
+          };
+          const idx = merged.findIndex(
+            (m) => m.id === mapped.id || m.email.toLowerCase() === mapped.email.toLowerCase()
+          );
+          if (idx >= 0) {
+            merged[idx] = { ...merged[idx], ...mapped };
+          } else {
+            merged.push(mapped);
+          }
+        });
+
+        this.profiles = merged;
+        this.persistProfiles();
+        this.notify();
+      }
+    } catch (err) {
+      console.warn('Profile sync warning:', err);
+    }
+    return this.profiles;
+  }
+
   public static getProfileById(id: string): Profile | undefined {
     return this.profiles.find((p) => p.id === id);
   }
 
+  public static getProfile(id: string): Profile | undefined {
+    return this.profiles.find((p) => p.id === id || p.email.toLowerCase() === id.toLowerCase());
+  }
+
   public static saveProfile(profile: Profile): void {
-    const idx = this.profiles.findIndex((p) => p.id === profile.id);
+    const idx = this.profiles.findIndex((p) => p.id === profile.id || p.email.toLowerCase() === profile.email.toLowerCase());
     if (idx >= 0) {
       this.profiles[idx] = { ...this.profiles[idx], ...profile, updated_at: new Date().toISOString() };
     } else {
-      this.profiles.push({ ...profile, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+      this.profiles.unshift({ ...profile, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
     }
+    this.persistProfiles();
     this.notify();
 
     const supabase = createClient();
@@ -510,6 +592,7 @@ export class UniMateStore {
     const user = this.profiles.find((p) => p.id === userId);
     if (!user) return false;
     user.is_suspended = !user.is_suspended;
+    this.persistProfiles();
     this.notify();
 
     const supabase = createClient();
@@ -526,6 +609,7 @@ export class UniMateStore {
     if (!user) return false;
     user.role = newRole;
     user.updated_at = new Date().toISOString();
+    this.persistProfiles();
     this.notify();
 
     const supabase = createClient();
@@ -1491,6 +1575,13 @@ export class UniMateStore {
         resolved_at: rep.resolved_at
       }).eq('id', reportId);
     }
+  }
+
+  private static persistProfiles(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('unimate_cached_profiles', JSON.stringify(this.profiles));
+    } catch (e) {}
   }
 
   // --- PLATFORM STATS ---

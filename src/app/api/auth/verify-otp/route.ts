@@ -22,7 +22,21 @@ export async function POST(request: Request) {
 
     // Code is 100% VALID and confirmed!
     const supabase = createClient();
-    const studentId = 'student-' + cleanEmail.split('@')[0];
+    let studentId = crypto.randomUUID();
+
+    if (supabase) {
+      try {
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+
+        if (existingUser?.id) {
+          studentId = existingUser.id;
+        }
+      } catch (e) {}
+    }
 
     const profileRecord = {
       id: studentId,
@@ -31,7 +45,7 @@ export async function POST(request: Request) {
       role: 'student',
       department_id: profileData?.departmentId || undefined,
       program: profileData?.program || 'BS Computer Science',
-      semester: profileData?.semester || 1,
+      semester: profileData?.semester ? Number(profileData.semester) : 1,
       student_id: profileData?.studentId || undefined,
       avatar_url: profileData?.avatarUrl || undefined,
       bio: `Verified student in ${profileData?.program || 'BS Computer Science'}.`,

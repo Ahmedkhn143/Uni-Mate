@@ -51,7 +51,6 @@ export default function RegisterPage() {
   // OTP Verification State
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [resendTimer, setResendTimer] = useState<number>(60);
-  const [receivedCode, setReceivedCode] = useState<string | null>(null);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Metadata & Feedback
@@ -127,15 +126,13 @@ export default function RegisterPage() {
     // Check university domain (@kfueit.edu.pk or *.edu.pk)
     const cleanEmail = email.trim().toLowerCase();
     const domain = cleanEmail.split('@')[1]?.toLowerCase() || '';
-    const allowedProviders = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'live.com'];
     const isAllowed = 
       allowedDomains.some((d) => domain === d || domain.endsWith('.' + d)) ||
       domain.endsWith('.edu.pk') ||
-      domain === 'kfueit.edu.pk' ||
-      allowedProviders.includes(domain);
+      domain === 'kfueit.edu.pk';
 
     if (!isAllowed) {
-      setError(`Your email must end with an approved domain (${allowedDomains.map(d => '@' + d).join(', ')}, @*.edu.pk, @gmail.com, @yahoo.com, etc.).`);
+      setError(`Your email must end with an approved university domain (${allowedDomains.map(d => '@' + d).join(', ')} or @*.edu.pk).`);
       return;
     }
 
@@ -173,9 +170,6 @@ export default function RegisterPage() {
       }
       setOtpDigits(['', '', '', '', '', '']);
       setResendTimer(60);
-      if (res.code) {
-        setReceivedCode(res.code);
-      }
       setStep('otp');
     } else {
       const errMsg = res.error?.toLowerCase() || '';
@@ -222,12 +216,6 @@ export default function RegisterPage() {
     }
   };
 
-  const handleAutoFillCode = () => {
-    if (receivedCode && receivedCode.length === 6) {
-      setOtpDigits(receivedCode.split(''));
-    }
-  };
-
   const handleResendCode = async () => {
     if (resendTimer > 0) return;
     setError('');
@@ -239,9 +227,6 @@ export default function RegisterPage() {
 
     if (res.success) {
       setResendTimer(60);
-      if (res.code) {
-        setReceivedCode(res.code);
-      }
       setSuccessMsg(`A new confirmation code has been sent to ${email.trim().toLowerCase()}.`);
     } else {
       setError(res.error || 'Failed to resend confirmation code. Please wait a moment before trying again.');
@@ -270,6 +255,7 @@ export default function RegisterPage() {
       entered,
       {
         fullName: fullName.trim(),
+        password,
         departmentId: finalDept,
         program: finalProgram,
         semester: Number(semester),
@@ -591,17 +577,6 @@ export default function RegisterPage() {
                   />
                 ))}
               </div>
-
-              {receivedCode && (
-                <button
-                  type="button"
-                  onClick={handleAutoFillCode}
-                  className="w-full py-2 px-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center justify-center gap-2 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Auto-Fill Instant Code ({receivedCode})</span>
-                </button>
-              )}
             </div>
 
             {/* Action Buttons */}

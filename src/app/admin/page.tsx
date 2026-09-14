@@ -26,7 +26,8 @@ import {
   Eye,
   Activity,
   Layers,
-  Sparkles
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -43,6 +44,7 @@ export default function AdminDashboardPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [studentSearch, setStudentSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'posts' | 'moderation' | 'papers' | 'students' | 'broadcast'>('posts');
+  const [syncingStudents, setSyncingStudents] = useState(false);
   
   // Broadcast Announcement State
   const [broadcastTitle, setBroadcastTitle] = useState('');
@@ -66,7 +68,18 @@ export default function AdminDashboardPage() {
       setProfiles(UniMateStore.getProfiles());
     };
     load();
-    return UniMateStore.subscribe(load);
+    UniMateStore.syncProfiles();
+    const unsubscribe = UniMateStore.subscribe(load);
+
+    // Auto-sync students every 12 seconds so new registrations appear dynamically
+    const interval = setInterval(() => {
+      UniMateStore.syncProfiles();
+    }, 12000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
   }, []);
 
   if (!isModeratorOrAdmin) {
@@ -561,15 +574,33 @@ export default function AdminDashboardPage() {
                     Manage student status, inspect department profiles, or enforce temporary campus disciplinary suspensions.
                   </p>
                 </div>
-                <div className="relative w-full sm:w-64">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search student by name..."
-                    value={studentSearch}
-                    onChange={(e) => setStudentSearch(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setSyncingStudents(true);
+                      await UniMateStore.syncProfiles();
+                      setSyncingStudents(false);
+                      showNotice('Student directory synchronized with university database.');
+                    }}
+                    disabled={syncingStudents}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold shadow-xs transition shrink-0 cursor-pointer"
+                    title="Refresh student list from database"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${syncingStudents ? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
+                  </button>
+
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search student by name..."
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
                 </div>
               </div>
 

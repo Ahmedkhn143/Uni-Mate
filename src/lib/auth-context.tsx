@@ -24,12 +24,13 @@ interface AuthContextType {
     semester: number;
     studentId?: string;
     avatarUrl?: string;
-  }) => Promise<{ success: boolean; error?: string; requiresVerification?: boolean; code?: string }>;
+  }) => Promise<{ success: boolean; error?: string; requiresVerification?: boolean }>;
   verifyOtp: (
     email: string,
     token: string,
     profileData?: {
       fullName: string;
+      password?: string;
       departmentId?: string;
       program?: string;
       semester?: number;
@@ -37,7 +38,7 @@ interface AuthContextType {
       avatarUrl?: string;
     }
   ) => Promise<{ success: boolean; error?: string }>;
-  resendOtp: (email: string) => Promise<{ success: boolean; error?: string; code?: string }>;
+  resendOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   switchUser?: (role: UserRole) => void;
   updateCurrentUserProfile: (updates: Partial<Profile>) => Promise<void>;
@@ -263,7 +264,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     semester: number;
     studentId?: string;
     avatarUrl?: string;
-  }): Promise<{ success: boolean; error?: string; requiresVerification?: boolean; code?: string }> => {
+  }): Promise<{ success: boolean; error?: string; requiresVerification?: boolean }> => {
     setIsLoading(true);
     const cleanEmail = data.email.trim().toLowerCase();
 
@@ -285,7 +286,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setIsLoading(false);
-      return { success: true, requiresVerification: true, code: resData.code };
+      return { success: true, requiresVerification: true };
     } catch (err: any) {
       setIsLoading(false);
       return { success: false, error: err?.message || 'Failed to dispatch verification code.' };
@@ -297,6 +298,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     token: string,
     profileData?: {
       fullName: string;
+      password?: string;
       departmentId?: string;
       program?: string;
       semester?: number;
@@ -326,7 +328,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
         return { 
           success: false, 
-          error: resData.error || 'Invalid or expired confirmation code. Please check your email.' 
+          error: resData.error || 'Invalid or expired confirmation code. Please check your university email.' 
         };
       }
 
@@ -335,19 +337,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Register / Sync in Supabase Auth if client is configured
       const supabase = createClient();
       if (supabase) {
-        await supabase.auth.signUp({
-          email: cleanEmail,
-          password: 'KFUEITStudent2026!',
-          options: {
-            data: {
+        const studentPassword = profileData?.password || 'KFUEITStudent2026!';
+        try {
+          const { data: authData, error: signUpErr } = await supabase.auth.signUp({
+            email: cleanEmail,
+            password: studentPassword,
+            options: {
+              data: {
+                full_name: profileData?.fullName || verifiedProfile.full_name,
+                role: 'student'
+              }
+            }
+          });
+
+          let finalUserId = authData?.user?.id;
+
+          if (!finalUserId && signUpErr) {
+            const { data: signInData } = await supabase.auth.signInWithPassword({
+              email: cleanEmail,
+              password: studentPassword
+            });
+            finalUserId = signInData?.user?.id;
+          }
+
+          if (finalUserId) {
+            verifiedProfile.id = finalUserId;
+            await supabase.from('profiles').update({
               full_name: profileData?.fullName || verifiedProfile.full_name,
               role: 'student',
               department_id: profileData?.departmentId,
               program: profileData?.program,
-              semester: profileData?.semester
-            }
+              semester: profileData?.semester,
+              avatar_url: profileData?.avatarUrl
+            }).eq('id', finalUserId);
           }
-        }).catch(() => {});
+        } catch (authErr) {
+          console.warn('Supabase auth sync notice:', authErr);
+        }
       }
 
       if (typeof window !== 'undefined') {
@@ -364,7 +390,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const resendOtp = async (email: string): Promise<{ success: boolean; error?: string; code?: string }> => {
+  const resendOtp = async (email: string): Promise<{ success: boolean; error?: string }> => {
     const cleanEmail = email.trim().toLowerCase();
     try {
       const response = await fetch('/api/auth/send-otp', {
@@ -378,7 +404,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: resData.error || 'Failed to resend confirmation code.' };
       }
 
-      return { success: true, code: resData.code };
+      return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Failed to resend confirmation code.' };
     }

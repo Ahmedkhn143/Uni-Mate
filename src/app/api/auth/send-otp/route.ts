@@ -18,18 +18,16 @@ export async function POST(request: Request) {
     const domainList = allowedDomain.split(',').map((d) => d.trim().toLowerCase());
     const emailDomain = cleanEmail.split('@')[1]?.toLowerCase() || '';
 
-    const allowedProviders = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'live.com'];
     const isAllowed = 
       domainList.some((d) => emailDomain === d || emailDomain.endsWith('.' + d)) ||
       emailDomain.endsWith('.edu.pk') ||
-      emailDomain === 'kfueit.edu.pk' ||
-      allowedProviders.includes(emailDomain);
+      emailDomain === 'kfueit.edu.pk';
 
     if (!isAllowed) {
       return NextResponse.json(
         { 
           success: false, 
-          error: `Please provide a valid student or personal email address (@${domainList.join(', @')}, @*.edu.pk, @gmail.com, @yahoo.com, etc.).` 
+          error: `Please provide an approved university email address (@${domainList.join(', @')} or any university @*.edu.pk domain).` 
         },
         { status: 400 }
       );
@@ -41,23 +39,23 @@ export async function POST(request: Request) {
     // Save in secure store
     saveOtp(cleanEmail, code);
 
-    // Send the real email
+    // Send the real email directly to university inbox
     const emailResult = await sendVerificationEmail(cleanEmail, code, fullName);
 
     if (!emailResult.success) {
-      console.warn('[UniMate Email Notice] External delivery notice:', emailResult.error);
-      return NextResponse.json({
-        success: true,
-        code,
-        warning: emailResult.error,
-        message: `A 6-digit confirmation code (${code}) has been generated for ${cleanEmail}. Check your inbox or use the instant auto-fill code below.`
-      });
+      console.warn('[UniMate Email Warning] Delivery failed:', emailResult.error);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Could not send verification code to your university email: ${emailResult.error || 'Mail delivery failed'}. Please check the email address and try again.` 
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      code,
-      message: `A 6-digit confirmation code has been sent to ${cleanEmail}. Please check your Inbox and Spam/Junk folder.`
+      message: `A 6-digit confirmation code has been sent to ${cleanEmail}. Please check your university inbox (and spam/junk folder).`
     });
   } catch (err: any) {
     return NextResponse.json(

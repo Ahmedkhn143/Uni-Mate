@@ -10,7 +10,8 @@ import {
   CheckCircle2, 
   ArrowLeft,
   Mail,
-  GraduationCap
+  GraduationCap,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -21,13 +22,24 @@ export default function AdminUsersPage() {
   const { isAdmin, isModerator, isModeratorOrAdmin } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [search, setSearch] = useState('');
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     const load = () => {
       setProfiles(UniMateStore.getProfiles());
     };
     load();
-    return UniMateStore.subscribe(load);
+    UniMateStore.syncProfiles();
+    const unsubscribe = UniMateStore.subscribe(load);
+
+    const interval = setInterval(() => {
+      UniMateStore.syncProfiles();
+    }, 12000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
   }, []);
 
   if (!isModeratorOrAdmin) {
@@ -70,15 +82,32 @@ export default function AdminUsersPage() {
             </p>
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by student name or email..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
-            />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={async () => {
+                setSyncing(true);
+                await UniMateStore.syncProfiles();
+                setSyncing(false);
+              }}
+              disabled={syncing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold shadow-xs transition shrink-0 cursor-pointer"
+              title="Refresh student list from database"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${syncing ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
+
+            <div className="relative w-full sm:w-64">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by student name or email..."
+                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+              />
+            </div>
           </div>
         </div>
       </div>
