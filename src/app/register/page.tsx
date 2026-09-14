@@ -127,13 +127,15 @@ export default function RegisterPage() {
     // Check university domain (@kfueit.edu.pk or *.edu.pk)
     const cleanEmail = email.trim().toLowerCase();
     const domain = cleanEmail.split('@')[1]?.toLowerCase() || '';
+    const allowedProviders = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'live.com'];
     const isAllowed = 
       allowedDomains.some((d) => domain === d || domain.endsWith('.' + d)) ||
       domain.endsWith('.edu.pk') ||
-      domain === 'kfueit.edu.pk';
+      domain === 'kfueit.edu.pk' ||
+      allowedProviders.includes(domain);
 
     if (!isAllowed) {
-      setError(`Your email must end with an approved university domain (${allowedDomains.map(d => '@' + d).join(', ')} or @*.edu.pk).`);
+      setError(`Your email must end with an approved domain (${allowedDomains.map(d => '@' + d).join(', ')}, @*.edu.pk, @gmail.com, @yahoo.com, etc.).`);
       return;
     }
 

@@ -18,17 +18,18 @@ export async function POST(request: Request) {
     const domainList = allowedDomain.split(',').map((d) => d.trim().toLowerCase());
     const emailDomain = cleanEmail.split('@')[1]?.toLowerCase() || '';
 
+    const allowedProviders = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'live.com'];
     const isAllowed = 
       domainList.some((d) => emailDomain === d || emailDomain.endsWith('.' + d)) ||
       emailDomain.endsWith('.edu.pk') ||
       emailDomain === 'kfueit.edu.pk' ||
-      cleanEmail === 'ahmadkha8143@gmail.com';
+      allowedProviders.includes(emailDomain);
 
     if (!isAllowed) {
       return NextResponse.json(
         { 
           success: false, 
-          error: `Please provide an approved university email address (@${domainList.join(', @')} or any university @*.edu.pk domain).` 
+          error: `Please provide a valid student or personal email address (@${domainList.join(', @')}, @*.edu.pk, @gmail.com, @yahoo.com, etc.).` 
         },
         { status: 400 }
       );
