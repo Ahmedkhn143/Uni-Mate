@@ -24,7 +24,7 @@ interface AuthContextType {
     semester: number;
     studentId?: string;
     avatarUrl?: string;
-  }) => Promise<{ success: boolean; error?: string; requiresVerification?: boolean }>;
+  }) => Promise<{ success: boolean; error?: string; requiresVerification?: boolean; code?: string }>;
   verifyOtp: (
     email: string,
     token: string,
@@ -37,7 +37,7 @@ interface AuthContextType {
       avatarUrl?: string;
     }
   ) => Promise<{ success: boolean; error?: string }>;
-  resendOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
+  resendOtp: (email: string) => Promise<{ success: boolean; error?: string; code?: string }>;
   logout: () => Promise<void>;
   switchUser?: (role: UserRole) => void;
   updateCurrentUserProfile: (updates: Partial<Profile>) => Promise<void>;
@@ -263,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     semester: number;
     studentId?: string;
     avatarUrl?: string;
-  }): Promise<{ success: boolean; error?: string; requiresVerification?: boolean }> => {
+  }): Promise<{ success: boolean; error?: string; requiresVerification?: boolean; code?: string }> => {
     setIsLoading(true);
     const cleanEmail = data.email.trim().toLowerCase();
 
@@ -285,7 +285,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setIsLoading(false);
-      return { success: true, requiresVerification: true };
+      return { success: true, requiresVerification: true, code: resData.code };
     } catch (err: any) {
       setIsLoading(false);
       return { success: false, error: err?.message || 'Failed to dispatch verification code.' };
@@ -364,7 +364,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const resendOtp = async (email: string): Promise<{ success: boolean; error?: string }> => {
+  const resendOtp = async (email: string): Promise<{ success: boolean; error?: string; code?: string }> => {
     const cleanEmail = email.trim().toLowerCase();
     try {
       const response = await fetch('/api/auth/send-otp', {
@@ -378,7 +378,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: resData.error || 'Failed to resend confirmation code.' };
       }
 
-      return { success: true };
+      return { success: true, code: resData.code };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Failed to resend confirmation code.' };
     }

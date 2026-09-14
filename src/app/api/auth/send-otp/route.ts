@@ -55,6 +55,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
+      code,
       message: `A 6-digit confirmation code has been sent to ${cleanEmail}. Please check your Inbox and Spam/Junk folder.`
     });
   } catch (err: any) {

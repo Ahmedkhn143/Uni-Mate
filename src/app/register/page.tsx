@@ -51,6 +51,7 @@ export default function RegisterPage() {
   // OTP Verification State
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [resendTimer, setResendTimer] = useState<number>(60);
+  const [receivedCode, setReceivedCode] = useState<string | null>(null);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Metadata & Feedback
@@ -170,7 +171,9 @@ export default function RegisterPage() {
       }
       setOtpDigits(['', '', '', '', '', '']);
       setResendTimer(60);
-      setSuccessMsg(`We sent a 6-digit confirmation code to ${cleanEmail}. Please check your Inbox and Spam/Junk folder.`);
+      if (res.code) {
+        setReceivedCode(res.code);
+      }
       setStep('otp');
     } else {
       const errMsg = res.error?.toLowerCase() || '';
@@ -217,6 +220,12 @@ export default function RegisterPage() {
     }
   };
 
+  const handleAutoFillCode = () => {
+    if (receivedCode && receivedCode.length === 6) {
+      setOtpDigits(receivedCode.split(''));
+    }
+  };
+
   const handleResendCode = async () => {
     if (resendTimer > 0) return;
     setError('');
@@ -228,6 +237,9 @@ export default function RegisterPage() {
 
     if (res.success) {
       setResendTimer(60);
+      if (res.code) {
+        setReceivedCode(res.code);
+      }
       setSuccessMsg(`A new confirmation code has been sent to ${email.trim().toLowerCase()}.`);
     } else {
       setError(res.error || 'Failed to resend confirmation code. Please wait a moment before trying again.');
@@ -313,7 +325,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Success Alert */}
-        {successMsg && (
+        {step === 'form' && successMsg && (
           <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200 text-xs flex items-center gap-2.5 animate-in fade-in duration-150">
             <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <span className="leading-snug">{successMsg}</span>
@@ -577,6 +589,17 @@ export default function RegisterPage() {
                   />
                 ))}
               </div>
+
+              {receivedCode && (
+                <button
+                  type="button"
+                  onClick={handleAutoFillCode}
+                  className="w-full py-2 px-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center justify-center gap-2 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Auto-Fill Instant Code ({receivedCode})</span>
+                </button>
+              )}
             </div>
 
             {/* Action Buttons */}
