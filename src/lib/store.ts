@@ -68,7 +68,24 @@ export class UniMateStore {
     return () => this.listeners.delete(listener);
   }
 
+  private static persistOfflineCache(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('unimate_offline_store', JSON.stringify({
+        questions: this.questions,
+        pastPapers: this.pastPapers,
+        lostFound: this.lostFound,
+        posts: this.posts,
+        bookmarks: this.bookmarks,
+        departments: this.departments,
+        subjects: this.subjects,
+        timestamp: Date.now()
+      }));
+    } catch (e) {}
+  }
+
   private static notify(): void {
+    this.persistOfflineCache();
     this.listeners.forEach((fn) => {
       try {
         fn();
@@ -83,6 +100,23 @@ export class UniMateStore {
     if (this.isFetching) return;
     this.isFetching = true;
     this.isInitialized = true;
+
+    // 0. Restore offline cache immediately so app is instantly responsive offline
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('unimate_offline_store');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.questions?.length) this.questions = parsed.questions;
+          if (parsed.pastPapers?.length) this.pastPapers = parsed.pastPapers;
+          if (parsed.lostFound?.length) this.lostFound = parsed.lostFound;
+          if (parsed.posts?.length) this.posts = parsed.posts;
+          if (parsed.bookmarks?.length) this.bookmarks = parsed.bookmarks;
+          if (parsed.departments?.length) this.departments = parsed.departments;
+          if (parsed.subjects?.length) this.subjects = parsed.subjects;
+        }
+      } catch (e) {}
+    }
 
     if (!isSupabaseConfigured()) {
       this.isFetching = false;

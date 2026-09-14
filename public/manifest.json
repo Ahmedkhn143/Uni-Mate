@@ -3,14 +3,52 @@
   "short_name": "UniMate",
   "description": "The Academic Operating System for KFUEIT Students — Past Papers, Q&A Forum, and Lost & Found",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#0f172a",
   "theme_color": "#4f46e5",
+  "categories": ["education", "productivity", "utilities"],
   "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Past Papers",
+      "url": "/past-papers",
+      "description": "Browse and download solved exam papers"
+    },
+    {
+      "name": "Q&A Community",
+      "url": "/questions",
+      "description": "Ask questions and get answers from peers"
+    },
+    {
+      "name": "Lost & Found",
+      "url": "/lost-and-found",
+      "description": "Report lost or found items on campus"
     }
   ]
 }

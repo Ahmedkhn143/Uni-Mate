@@ -20,16 +20,20 @@ import {
   PackageSearch,
   AlertCircle,
   Sun,
-  Moon
+  Moon,
+  Smartphone,
+  WifiOff
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useTheme } from '@/lib/theme-context';
+import { usePWA } from '@/components/pwa/PWAProvider';
 
 export function Navbar() {
   const { user, isAdmin, logout } = useAuth();
   const { theme, isDark, toggleTheme } = useTheme();
+  const { isOnline, installPWA } = usePWA();
   const pathname = usePathname();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -121,6 +125,21 @@ export function Navbar() {
 
             {/* Right Controls */}
             <div className="flex items-center gap-2 sm:gap-3">
+              {!isOnline && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-[10px] font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                  <span>Offline</span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={installPWA}
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition cursor-pointer"
+                title="Install UniMate App"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span>Install App</span>
+              </button>
               <ThemeToggle />
               {user ? (
                 <div className="flex items-center gap-2.5">
@@ -380,6 +399,24 @@ export function Navbar() {
                 >
                   <Bookmark className="w-5 h-5" />
                 </Link>
+
+                {/* Offline Indicator & Install App in Authenticated Navbar */}
+                {!isOnline && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-[10px] font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                    <span>Offline</span>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={installPWA}
+                  className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
+                  title="Install UniMate App on Phone or Laptop"
+                >
+                  <Smartphone className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <span className="hidden lg:inline">Install App</span>
+                </button>
 
                 {/* Theme Mode Switcher */}
                 <div className="hidden xs:block">
