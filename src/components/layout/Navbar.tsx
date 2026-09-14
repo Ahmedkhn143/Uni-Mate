@@ -31,7 +31,7 @@ import { useTheme } from '@/lib/theme-context';
 import { usePWA } from '@/components/pwa/PWAProvider';
 
 export function Navbar() {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, isModerator, isModeratorOrAdmin, logout } = useAuth();
   const { theme, isDark, toggleTheme } = useTheme();
   const { isOnline, installPWA } = usePWA();
   const pathname = usePathname();
@@ -285,7 +285,7 @@ export function Navbar() {
           
           {/* Brand Logo */}
           <div className="flex items-center gap-3">
-            <Link href={user ? (isAdmin ? '/admin' : '/dashboard') : '/'} className="flex items-center gap-2.5 group">
+            <Link href={user ? (isModeratorOrAdmin ? '/admin' : '/dashboard') : '/'} className="flex items-center gap-2.5 group">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
                 <GraduationCap className="w-5 h-5" />
               </div>
@@ -296,6 +296,10 @@ export function Navbar() {
                 {isAdmin ? (
                   <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-black tracking-wider px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded border border-amber-300 dark:border-amber-800">
                     ADMIN CONSOLE
+                  </span>
+                ) : isModerator ? (
+                  <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-black tracking-wider px-2 py-0.5 bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 rounded border border-purple-300 dark:border-purple-800">
+                    MODERATOR
                   </span>
                 ) : (
                   <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded border border-indigo-200 dark:border-indigo-800">
@@ -483,7 +487,7 @@ export function Navbar() {
                       </div>
 
                       <div className="py-1">
-                        {isAdmin ? (
+                        {isModeratorOrAdmin ? (
                           <>
                             <Link
                               href="/admin"
@@ -491,7 +495,7 @@ export function Navbar() {
                               className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 transition"
                             >
                               <ShieldCheck className="w-4 h-4 text-amber-600" />
-                              Admin Command Center
+                              {isAdmin ? 'Admin Command Center' : 'Moderator Console'}
                             </Link>
                             <Link
                               href="/admin/reports"

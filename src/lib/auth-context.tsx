@@ -9,6 +9,8 @@ interface AuthContextType {
   user: Profile | null;
   role: UserRole | null;
   isAdmin: boolean;
+  isModerator: boolean;
+  isModeratorOrAdmin: boolean;
   isStudent: boolean;
   isLoading: boolean;
   isConfigured: boolean;
@@ -266,7 +268,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanEmail = data.email.trim().toLowerCase();
 
     try {
-      // 1. Send real verification email code via API
+      // Send 6-digit OTP code directly to university email via Nodemailer
       const response = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -280,26 +282,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!response.ok || !resData.success) {
         setIsLoading(false);
         return { success: false, error: resData.error || 'Failed to send verification code.' };
-      }
-
-      // Also trigger Supabase signup in background
-      const supabase = createClient();
-      if (supabase) {
-        await supabase.auth.signUp({
-          email: cleanEmail,
-          password: data.password || 'KFUEITStudent2026!',
-          options: {
-            data: {
-              full_name: data.fullName,
-              role: 'student',
-              department_id: data.departmentId,
-              program: data.program,
-              semester: data.semester,
-              student_id: data.studentId,
-              avatar_url: data.avatarUrl
-            }
-          }
-        }).catch(() => {});
       }
 
       setIsLoading(false);
@@ -327,7 +309,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanToken = token.trim();
 
     try {
-      // Strict verification - verify against actual dispatched code
+      // Verify 6-digit code against server OTP store
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -349,10 +331,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const verifiedProfile = resData.profile as Profile;
+
+      // Register / Sync in Supabase Auth if client is configured
+      const supabase = createClient();
+      if (supabase) {
+        await supabase.auth.signUp({
+          email: cleanEmail,
+          password: 'KFUEITStudent2026!',
+          options: {
+            data: {
+              full_name: profileData?.fullName || verifiedProfile.full_name,
+              role: 'student',
+              department_id: profileData?.departmentId,
+              program: profileData?.program,
+              semester: profileData?.semester
+            }
+          }
+        }).catch(() => {});
+      }
+
       if (typeof window !== 'undefined') {
         localStorage.setItem('unimate_active_user', JSON.stringify(verifiedProfile));
       }
 
+      UniMateStore.saveProfile(verifiedProfile);
       setUser(verifiedProfile);
       setIsLoading(false);
       return { success: true };
@@ -417,6 +419,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         role: user?.role || null,
         isAdmin: user?.role === 'admin',
+        isModerator: user?.role === 'moderator',
+        isModeratorOrAdmin: user?.role === 'admin' || user?.role === 'moderator',
         isStudent: user?.role === 'student',
         isLoading,
         isConfigured,

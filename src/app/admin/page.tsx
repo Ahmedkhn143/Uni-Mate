@@ -34,7 +34,7 @@ import { Report, PastPaper, Profile, Post } from '@/types/database';
 import { AdminAccessDenied } from '@/components/ui/AdminAccessDenied';
 
 export default function AdminDashboardPage() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isModerator, isModeratorOrAdmin } = useAuth();
   
   const [stats, setStats] = useState<any>(null);
   const [reports, setReports] = useState<Report[]>([]);
@@ -69,7 +69,7 @@ export default function AdminDashboardPage() {
     return UniMateStore.subscribe(load);
   }, []);
 
-  if (!isAdmin) {
+  if (!isModeratorOrAdmin) {
     return <AdminAccessDenied />;
   }
 
@@ -89,8 +89,21 @@ export default function AdminDashboardPage() {
   };
 
   const handleToggleSuspend = (targetUserId: string, name: string) => {
+    if (!isAdmin) {
+      showNotice('Access Restricted: Only Super Admin can suspend accounts.');
+      return;
+    }
     UniMateStore.toggleUserSuspension(targetUserId);
     showNotice(`User account status updated for ${name}.`);
+  };
+
+  const handleRoleChange = (targetUserId: string, newRole: 'student' | 'moderator', name: string) => {
+    if (!isAdmin) {
+      showNotice('Access Restricted: Only Super Admin can assign or revoke Moderator roles.');
+      return;
+    }
+    UniMateStore.updateUserRole(targetUserId, newRole);
+    showNotice(`Role updated to ${newRole.toUpperCase()} for ${name}.`);
   };
 
   const handleSendBroadcast = (e: React.FormEvent) => {
@@ -114,7 +127,7 @@ export default function AdminDashboardPage() {
 
   const filteredStudents = profiles.filter(
     (p) => 
-      p.role === 'student' && 
+      p.role !== 'admin' && 
       (p.full_name.toLowerCase().includes(studentSearch.toLowerCase()) || 
        p.email.toLowerCase().includes(studentSearch.toLowerCase()) ||
        (p.program && p.program.toLowerCase().includes(studentSearch.toLowerCase())))
@@ -570,13 +583,22 @@ export default function AdminDashboardPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-slate-900 dark:text-slate-100">{st.full_name}</span>
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                            st.role === 'admin'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                              : st.role === 'moderator'
+                              ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
+                              : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
+                          }`}>
+                            {st.role}
+                          </span>
                           {st.is_suspended ? (
                             <span className="text-[10px] font-black px-2 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 uppercase">
                               Suspended
                             </span>
                           ) : (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                              Active Student
+                              Active
                             </span>
                           )}
                         </div>
@@ -586,17 +608,43 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleToggleSuspend(st.id, st.full_name)}
-                      className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition shrink-0 ${
-                        st.is_suspended
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-                          : 'bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600'
-                      }`}
-                    >
-                      <UserX className="w-3.5 h-3.5" />
-                      {st.is_suspended ? 'Reinstate Student' : 'Suspend Account'}
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isAdmin ? (
+                        <>
+                          {st.role === 'student' ? (
+                            <button
+                              onClick={() => handleRoleChange(st.id, 'moderator', st.full_name)}
+                              className="px-3 py-1.5 rounded-xl font-bold text-xs bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 hover:bg-purple-100 transition"
+                            >
+                              Make Moderator
+                            </button>
+                          ) : st.role === 'moderator' ? (
+                            <button
+                              onClick={() => handleRoleChange(st.id, 'student', st.full_name)}
+                              className="px-3 py-1.5 rounded-xl font-bold text-xs bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 transition"
+                            >
+                              Demote to Student
+                            </button>
+                          ) : null}
+
+                          <button
+                            onClick={() => handleToggleSuspend(st.id, st.full_name)}
+                            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition ${
+                              st.is_suspended
+                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                                : 'bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600'
+                            }`}
+                          >
+                            <UserX className="w-3.5 h-3.5" />
+                            {st.is_suspended ? 'Reinstate' : 'Suspend'}
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 font-semibold px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">
+                          Admin Authorization Required
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

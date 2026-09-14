@@ -212,15 +212,6 @@ export default function DashboardPage() {
                   <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                   <span>Campus Dashboard • {user.department_name || 'Academic Commons'}</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => toggleTheme()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 hover:bg-black/35 backdrop-blur-md text-[11px] font-semibold text-white transition cursor-pointer"
-                  title="Toggle Light / Dark Mode"
-                >
-                  {isDark ? <Sun className="w-3 h-3 text-amber-300" /> : <Moon className="w-3 h-3 text-indigo-300" />}
-                  <span>{isDark ? 'Switch to Light' : 'Switch to Dark'}</span>
-                </button>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
@@ -269,10 +260,6 @@ export default function DashboardPage() {
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Quick Actions
           </h2>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">Theme:</span>
-            <ThemeToggle showLabel className="py-1 px-2.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs" />
-          </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <Link

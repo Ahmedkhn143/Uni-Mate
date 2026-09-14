@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin')),
+    role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'moderator', 'admin')),
     department_id UUID,
     program TEXT,
     semester INT CHECK (semester >= 1 AND semester <= 12),
@@ -293,6 +293,17 @@ BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.profiles 
     WHERE id = auth.uid() AND role = 'admin' AND is_suspended = FALSE
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Helper function to check if current user is moderator or admin
+CREATE OR REPLACE FUNCTION public.is_moderator_or_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() AND role IN ('moderator', 'admin') AND is_suspended = FALSE
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

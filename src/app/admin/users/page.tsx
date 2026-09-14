@@ -18,7 +18,7 @@ import { Profile } from '@/types/database';
 import { AdminAccessDenied } from '@/components/ui/AdminAccessDenied';
 
 export default function AdminUsersPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isModerator, isModeratorOrAdmin } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [search, setSearch] = useState('');
 
@@ -30,12 +30,18 @@ export default function AdminUsersPage() {
     return UniMateStore.subscribe(load);
   }, []);
 
-  if (!isAdmin) {
+  if (!isModeratorOrAdmin) {
     return <AdminAccessDenied />;
   }
 
   const handleToggleSuspend = (userId: string) => {
+    if (!isAdmin) return;
     UniMateStore.toggleUserSuspension(userId);
+  };
+
+  const handleRoleChange = (userId: string, newRole: 'student' | 'moderator') => {
+    if (!isAdmin) return;
+    UniMateStore.updateUserRole(userId, newRole);
   };
 
   const filtered = profiles.filter(
@@ -120,6 +126,10 @@ export default function AdminUsersPage() {
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                         <ShieldCheck className="w-3 h-3" /> Admin
                       </span>
+                    ) : u.role === 'moderator' ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                        <ShieldCheck className="w-3 h-3" /> Moderator
+                      </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                         <GraduationCap className="w-3 h-3" /> Student
@@ -140,17 +150,41 @@ export default function AdminUsersPage() {
                   </td>
 
                   <td className="p-4 text-right">
-                    {u.role !== 'admin' && (
-                      <button
-                        onClick={() => handleToggleSuspend(u.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                          u.is_suspended
-                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                            : 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950 dark:text-red-300'
-                        }`}
-                      >
-                        {u.is_suspended ? 'Restore Student' : 'Suspend Account'}
-                      </button>
+                    {isAdmin ? (
+                      <div className="flex items-center justify-end gap-2">
+                        {u.role === 'student' ? (
+                          <button
+                            onClick={() => handleRoleChange(u.id, 'moderator')}
+                            className="px-2.5 py-1 rounded-xl text-xs font-bold bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-950 dark:text-purple-300 transition"
+                          >
+                            Make Moderator
+                          </button>
+                        ) : u.role === 'moderator' ? (
+                          <button
+                            onClick={() => handleRoleChange(u.id, 'student')}
+                            className="px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 transition"
+                          >
+                            Demote to Student
+                          </button>
+                        ) : null}
+
+                        {u.role !== 'admin' && (
+                          <button
+                            onClick={() => handleToggleSuspend(u.id)}
+                            className={`px-3 py-1 rounded-xl text-xs font-bold transition ${
+                              u.is_suspended
+                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                : 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950 dark:text-red-300'
+                            }`}
+                          >
+                            {u.is_suspended ? 'Restore' : 'Suspend'}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-semibold">
+                        Admin Only Action
+                      </span>
                     )}
                   </td>
                 </tr>

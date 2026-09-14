@@ -10,7 +10,7 @@ import { SystemSettings } from '@/types/database';
 import { AdminAccessDenied } from '@/components/ui/AdminAccessDenied';
 
 export default function AdminSettingsPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isModerator, isModeratorOrAdmin } = useAuth();
   
   const [settings, setSettings] = useState<SystemSettings>(UniMateStore.getSettings());
   const [universityName, setUniversityName] = useState(settings.university_name);
@@ -31,12 +31,13 @@ export default function AdminSettingsPage() {
     setBanner(s.announcement_banner || '');
   }, []);
 
-  if (!isAdmin) {
+  if (!isModeratorOrAdmin) {
     return <AdminAccessDenied />;
   }
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) return;
     const domains = domainsInput
       .split(',')
       .map((d) => d.trim().toLowerCase())
@@ -73,6 +74,13 @@ export default function AdminSettingsPage() {
           Configure institutional email domain verification, campus announcements, and file upload parameters.
         </p>
       </div>
+
+      {isModerator && !isAdmin && (
+        <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-purple-800 dark:text-purple-300 text-xs font-semibold flex items-center gap-2.5">
+          <ShieldCheck className="w-4 h-4 text-purple-600 shrink-0" />
+          <span><strong>Moderator Mode (Read-Only):</strong> System settings can only be altered by Super Admin.</span>
+        </div>
+      )}
 
       {saved && (
         <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">

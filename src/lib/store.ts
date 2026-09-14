@@ -2,6 +2,7 @@
 
 import { 
   Profile, 
+  UserRole,
   Department, 
   Subject, 
   Question, 
@@ -518,6 +519,22 @@ export class UniMateStore {
       });
     }
     return user.is_suspended;
+  }
+
+  public static updateUserRole(userId: string, newRole: UserRole): boolean {
+    const user = this.profiles.find((p) => p.id === userId);
+    if (!user) return false;
+    user.role = newRole;
+    user.updated_at = new Date().toISOString();
+    this.notify();
+
+    const supabase = createClient();
+    if (supabase) {
+      supabase.from('profiles').update({ role: newRole }).eq('id', userId).then(({ error }) => {
+        if (error) console.error('Error updating user role in Supabase:', error);
+      });
+    }
+    return true;
   }
 
   // --- DEPARTMENTS & SUBJECTS ---
@@ -1480,6 +1497,7 @@ export class UniMateStore {
   public static getStats() {
     return {
       totalStudents: this.profiles.filter((p) => p.role === 'student').length,
+      totalModerators: this.profiles.filter((p) => p.role === 'moderator').length,
       activeQuestions: this.questions.length,
       totalAnswers: this.answers.length,
       lostItems: this.lostFound.filter((i) => i.type === 'lost').length,
