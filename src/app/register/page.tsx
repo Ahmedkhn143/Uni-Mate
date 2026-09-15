@@ -123,18 +123,21 @@ export default function RegisterPage() {
       return;
     }
 
-    // Check university domain (@kfueit.edu.pk or *.edu.pk)
+    // Check university domain (@kfueit.edu.pk or *.edu.pk) OR common personal providers
     const cleanEmail = email.trim().toLowerCase();
     const domain = cleanEmail.split('@')[1]?.toLowerCase() || '';
+    const personalProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'live.com'];
     const isAllowed = 
       allowedDomains.some((d) => domain === d || domain.endsWith('.' + d)) ||
       domain.endsWith('.edu.pk') ||
-      domain === 'kfueit.edu.pk';
+      domain === 'kfueit.edu.pk' ||
+      personalProviders.includes(domain);
 
     if (!isAllowed) {
-      setError(`Your email must end with an approved university domain (${allowedDomains.map(d => '@' + d).join(', ')} or @*.edu.pk).`);
+      setError(`Please use a university email (@kfueit.edu.pk) or a personal email (@gmail.com, @yahoo.com, @outlook.com).`);
       return;
     }
+
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters.');

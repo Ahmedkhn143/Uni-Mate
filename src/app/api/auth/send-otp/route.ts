@@ -16,21 +16,26 @@ export async function POST(request: Request) {
 
     const cleanEmail = email.trim().toLowerCase();
 
-    // Verify university domain: Allow configured domains, subdomains, and recognized educational domains (*.edu.pk)
+    // Verify university domain OR common personal email providers
+    // University emails: *.edu.pk, kfueit.edu.pk
+    // Personal emails: gmail.com, yahoo.com, hotmail.com, outlook.com
     const allowedDomain = process.env.NEXT_PUBLIC_UNIVERSITY_EMAIL_DOMAIN || 'kfueit.edu.pk';
     const domainList = allowedDomain.split(',').map((d) => d.trim().toLowerCase());
     const emailDomain = cleanEmail.split('@')[1]?.toLowerCase() || '';
 
+    const personalEmailProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'live.com'];
+
     const isAllowed =
       domainList.some((d) => emailDomain === d || emailDomain.endsWith('.' + d)) ||
       emailDomain.endsWith('.edu.pk') ||
-      emailDomain === 'kfueit.edu.pk';
+      emailDomain === 'kfueit.edu.pk' ||
+      personalEmailProviders.includes(emailDomain);
 
     if (!isAllowed) {
       return NextResponse.json(
         {
           success: false,
-          error: `Please provide an approved university email address (@${domainList.join(', @')} or any @*.edu.pk domain).`,
+          error: `Please provide a valid university email (@kfueit.edu.pk, @*.edu.pk) or a personal email (@gmail.com, @yahoo.com, @outlook.com).`,
         },
         { status: 400 }
       );
