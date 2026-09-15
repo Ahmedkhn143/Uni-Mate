@@ -27,7 +27,7 @@ export const INITIAL_SETTINGS: SystemSettings = {
   announcement_banner: '📢 Welcome to UniMate - Official KFUEIT Student Community Platform'
 };
 
-// Pre-configured Campus Administrator: Ahmad Khan & Verified Students
+// Pre-configured Campus Administrator: Ahmad Khan (Super Admin)
 export const INITIAL_PROFILES: Profile[] = [
   {
     id: 'admin-ahmad-khan-2026',
@@ -43,54 +43,6 @@ export const INITIAL_PROFILES: Profile[] = [
     avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     is_suspended: false,
     created_at: new Date('2026-01-10').toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'student-zain-ali-2026',
-    email: 'zain.ali@kfueit.edu.pk',
-    full_name: 'Zain Ali',
-    role: 'student',
-    department_id: 'd1111111-1111-1111-1111-111111111111',
-    department_name: 'Department of Computer Science & IT',
-    program: 'BS Computer Science',
-    semester: 6,
-    reg_no: 'BSCS-2022-045',
-    is_anonymous: true, // Posts anonymously by default
-    avatar_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-    is_suspended: false,
-    created_at: new Date('2026-02-01').toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'student-fatima-noor-2026',
-    email: 'fatima.noor@kfueit.edu.pk',
-    full_name: 'Fatima Noor',
-    role: 'student',
-    department_id: 'd1111111-1111-1111-1111-111111111111',
-    department_name: 'Department of Computer Science & IT',
-    program: 'BS Software Engineering',
-    semester: 4,
-    reg_no: 'BSSE-2023-018',
-    is_anonymous: false,
-    avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    is_suspended: false,
-    created_at: new Date('2026-02-15').toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'student-hamza-tariq-2026',
-    email: 'hamza.tariq@kfueit.edu.pk',
-    full_name: 'Hamza Tariq',
-    role: 'moderator',
-    department_id: 'd2222222-2222-2222-2222-222222222222',
-    department_name: 'Department of Electrical Engineering',
-    program: 'BS Electrical Engineering',
-    semester: 7,
-    reg_no: 'BSEE-2021-089',
-    is_anonymous: false,
-    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    is_suspended: false,
-    created_at: new Date('2026-01-20').toISOString(),
     updated_at: new Date().toISOString()
   }
 ];

@@ -150,6 +150,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!regNo.trim()) {
+      setError('University Registration Number / Roll Number is required (e.g. BSCS-2022-45).');
+      return;
+    }
+
     setLoading(true);
 
     const finalDept = departmentId === 'other' ? (customDepartment.trim() || 'Other Department') : (departmentId || 'cs');
@@ -163,7 +168,7 @@ export default function RegisterPage() {
       departmentId: finalDept,
       program: finalProgram,
       semester: Number(semester),
-      regNo: regNo.trim() || undefined,
+      regNo: regNo.trim(),
       isAnonymous,
       avatarUrl: avatarPreview || undefined
     });
@@ -494,19 +499,20 @@ export default function RegisterPage() {
             {/* Registration Number */}
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                Registration Number <span className="text-slate-400 font-normal">(Optional)</span>
+                Registration Number / Roll # <span className="text-red-500 font-bold">*</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono select-none">#</span>
                 <input
                   type="text"
+                  required
                   value={regNo}
                   onChange={(e) => setRegNo(e.target.value)}
                   placeholder="e.g. BSCS-2022-45 or 2022-CS-0045"
                   className="w-full pl-7 pr-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition font-mono"
                 />
               </div>
-              <p className="text-[10px] text-slate-400">Your university-issued student ID / registration number</p>
+              <p className="text-[10px] text-slate-400">Required: Your university-issued student ID / registration number</p>
             </div>
 
             {/* Anonymous Mode Toggle */}

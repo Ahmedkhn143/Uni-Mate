@@ -23,10 +23,11 @@ export default function AdminUsersPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [search, setSearch] = useState('');
   const [syncing, setSyncing] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   useEffect(() => {
     const load = () => {
-      setProfiles(UniMateStore.getProfiles());
+      setProfiles([...UniMateStore.getProfiles()]);
     };
     load();
     UniMateStore.syncProfiles();
@@ -48,12 +49,26 @@ export default function AdminUsersPage() {
 
   const handleToggleSuspend = (userId: string) => {
     if (!isAdmin) return;
-    UniMateStore.toggleUserSuspension(userId);
+    const target = profiles.find((p) => p.id === userId);
+    const newStatus = UniMateStore.toggleUserSuspension(userId);
+    setProfiles((prev) =>
+      prev.map((p) => (p.id === userId ? { ...p, is_suspended: newStatus } : p))
+    );
+    const name = target?.full_name || 'User';
+    setToastMsg(newStatus ? `Account suspended for ${name}.` : `Account restored for ${name}.`);
+    setTimeout(() => setToastMsg(null), 3500);
   };
 
   const handleRoleChange = (userId: string, newRole: 'student' | 'moderator') => {
     if (!isAdmin) return;
+    const target = profiles.find((p) => p.id === userId);
     UniMateStore.updateUserRole(userId, newRole);
+    setProfiles((prev) =>
+      prev.map((p) => (p.id === userId ? { ...p, role: newRole } : p))
+    );
+    const name = target?.full_name || 'User';
+    setToastMsg(`Role updated to ${newRole === 'moderator' ? 'Moderator' : 'Student'} for ${name}.`);
+    setTimeout(() => setToastMsg(null), 3500);
   };
 
   const filtered = profiles.filter(
@@ -62,6 +77,13 @@ export default function AdminUsersPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Toast Feedback */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xl flex items-center gap-3 border border-slate-700 animate-in slide-in-from-bottom-5">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span className="text-xs font-bold">{toastMsg}</span>
+        </div>
+      )}
       
       {/* Header */}
       <div>
@@ -268,16 +290,31 @@ export default function AdminUsersPage() {
               </div>
 
               {u.role !== 'admin' && (
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                  {u.role === 'student' ? (
+                    <button
+                      onClick={() => handleRoleChange(u.id, 'moderator')}
+                      className="flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-950 dark:text-purple-300 transition text-center"
+                    >
+                      Make Moderator
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleRoleChange(u.id, 'student')}
+                      className="flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 transition text-center"
+                    >
+                      Demote to Student
+                    </button>
+                  )}
                   <button
                     onClick={() => handleToggleSuspend(u.id)}
-                    className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition text-center ${
+                    className={`flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold transition text-center ${
                       u.is_suspended
                         ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                         : 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/50 dark:text-red-300'
                     }`}
                   >
-                    {u.is_suspended ? 'Restore Student Account' : 'Suspend Student Account'}
+                    {u.is_suspended ? 'Restore' : 'Suspend'}
                   </button>
                 </div>
               )}

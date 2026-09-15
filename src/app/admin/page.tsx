@@ -35,7 +35,9 @@ import {
   Calendar,
   Mail,
   GraduationCap,
-  Building
+  Building,
+  Camera,
+  Edit3
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -173,17 +175,50 @@ export default function AdminDashboardPage() {
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-[11px] font-bold text-amber-300">
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-              <span>FACULTY ADMINISTRATION & CAMPUS OPERATIONS CONSOLE</span>
+          <div className="flex items-start sm:items-center gap-4.5 max-w-2xl">
+            {/* Admin Profile Photo with Quick Edit */}
+            <div className="relative group shrink-0">
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.full_name}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-4 ring-amber-400/30 shadow-xl"
+                />
+              ) : (
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-500/20 text-amber-300 font-black text-2xl flex items-center justify-center ring-4 ring-amber-400/30 shadow-xl">
+                  {user?.full_name?.charAt(0) || 'A'}
+                </div>
+              )}
+              <Link
+                href="/dashboard"
+                className="absolute -bottom-1.5 -right-1.5 p-1.5 rounded-xl bg-amber-400 text-slate-900 shadow-md hover:scale-110 transition cursor-pointer"
+                title="Edit avatar & profile in Dashboard"
+              >
+                <Camera className="w-3.5 h-3.5" />
+              </Link>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Dean & Administrator Command Center
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Logged in as <strong className="text-amber-300">{user?.full_name || 'Administrator'}</strong> ({user?.program || 'Campus Dean & Platform Administrator'}). Supervise student safety, academic content approvals, account standing, and emergency broadcasts.
-            </p>
+
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-[11px] font-bold text-amber-300">
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                <span>FACULTY ADMINISTRATION & CAMPUS OPERATIONS CONSOLE</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                Dean & Administrator Command Center
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Logged in as <strong className="text-amber-300">{user?.full_name || 'Administrator'}</strong> ({user?.program || 'Campus Dean & Platform Administrator'}). Supervise student safety, academic content approvals, account standing, and emergency broadcasts.
+              </p>
+              <div className="pt-0.5">
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-amber-300 text-xs font-bold transition"
+                >
+                  <Edit3 className="w-3 h-3" />
+                  <span>Edit Profile / Avatar Photo</span>
+                </Link>
+              </div>
+            </div>
           </div>
 
           {/* Real-time Status Badge */}

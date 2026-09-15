@@ -172,21 +172,6 @@ export default function DashboardPage() {
     );
   }
 
-  if (user.role === 'admin') {
-    return (
-      <div className="py-20 text-center space-y-4 max-w-md mx-auto">
-        <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-600 flex items-center justify-center mx-auto">
-          <ShieldCheck className="w-7 h-7" />
-        </div>
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Administrator Session Active</h2>
-        <p className="text-xs text-slate-500">You are logged in as a Campus Administrator. Please proceed to the Administration Console.</p>
-        <Link href="/admin" className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-md transition">
-          Open Admin Command Center →
-        </Link>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       
@@ -194,7 +179,7 @@ export default function DashboardPage() {
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-emerald-600 p-6 sm:p-8 text-white shadow-xl">
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-start sm:items-center gap-4.5 max-w-xl">
-            {/* Student Avatar with Quick Edit Button */}
+            {/* Student/Admin Avatar with Quick Edit Button */}
             <div className="relative group shrink-0">
               {user.avatar_url ? (
                 <img
@@ -221,22 +206,38 @@ export default function DashboardPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-semibold text-white">
                   <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Campus Dashboard • {user.department_name || 'Academic Commons'}</span>
+                  <span>Campus Dashboard • {user.department_name || (user.role === 'admin' ? 'Administration' : 'Academic Commons')}</span>
                 </div>
+                {user.role === 'admin' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-900 text-[10px] font-black uppercase tracking-wider shadow-sm">
+                    <ShieldCheck className="w-3 h-3" /> Campus Admin
+                  </span>
+                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                   Welcome back, {user.full_name}! 👋
                 </h1>
-                <button
-                  type="button"
-                  onClick={openEditProfile}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-bold text-white transition cursor-pointer"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>Edit Profile</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={openEditProfile}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-xs font-bold text-white transition cursor-pointer"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Edit Profile / Photo</span>
+                  </button>
+                  {user.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs shadow-md transition"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>Admin Console →</span>
+                    </Link>
+                  )}
+                </div>
               </div>
 
               {/* Student Registration Number & Anonymity Badges */}

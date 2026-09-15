@@ -1,4 +1,3 @@
-import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 
 // ─── Email HTML Template ────────────────────────────────────────────────────
@@ -33,7 +32,7 @@ function buildHtmlEmail(otpCode: string, studentName: string): string {
   `;
 }
 
-// ─── Gmail SMTP Transporter ─────────────────────────────────────────────────
+// ─── Gmail SMTP Transporter (Direct Delivery to Registered Student) ──────────
 async function sendViaGmailSMTP(
   toEmail: string,
   subject: string,
@@ -64,7 +63,7 @@ async function sendViaGmailSMTP(
       },
     });
 
-    // Verify connection first — throws if credentials are wrong
+    // Verify connection
     await transporter.verify();
 
     const info = await transporter.sendMail({
@@ -75,7 +74,7 @@ async function sendViaGmailSMTP(
       html,
     });
 
-    console.log(`[UniMate SMTP] ✅ Delivered to ${toEmail} — MessageId: ${info.messageId}`);
+    console.log(`[UniMate SMTP] ✅ Delivered verification code directly to ${toEmail} — MsgID: ${info.messageId}`);
     return { success: true };
   } catch (err: any) {
     const msg: string = err?.message || 'Unknown SMTP error';
@@ -96,52 +95,10 @@ async function sendViaGmailSMTP(
   }
 }
 
-// ─── Resend SDK ──────────────────────────────────────────────────────────────
-async function sendViaResend(
-  toEmail: string,
-  subject: string,
-  html: string,
-  text: string
-): Promise<{ success: boolean; error?: string }> {
-  const resendApiKey = process.env.RESEND_API_KEY;
-  if (!resendApiKey) return { success: false, error: 'No Resend API key.' };
-
-  try {
-    const resend = new Resend(resendApiKey);
-    const { data, error } = await resend.emails.send({
-      from: 'onboarding@resend.dev',
-      to: toEmail,
-      subject,
-      html,
-      text,
-    });
-
-    if (error) {
-      console.warn(`[UniMate Resend] ⚠️ Error for ${toEmail}:`, error.message);
-      return { success: false, error: error.message };
-    }
-
-    console.log(`[UniMate Resend] ✅ Delivered to ${toEmail}, ID: ${data?.id}`);
-    return { success: true };
-  } catch (err: any) {
-    console.warn('[UniMate Resend] ❌ Exception:', err?.message);
-    return { success: false, error: err?.message };
-  }
-}
-
 // ─── Main Export ─────────────────────────────────────────────────────────────
 /**
- * Sends a verification OTP email to the given address.
- *
- * Strategy:
- *  1. Gmail SMTP  → primary for ALL emails (works with any recipient worldwide)
- *  2. Resend      → fallback ONLY for the account owner's email (free tier limitation)
- *  3. Console log → last resort in development so the flow can still be tested
- *
- * WHY Gmail SMTP first?
- *  Resend free tier with `onboarding@resend.dev` can ONLY send to the Resend
- *  account owner's verified email. For any other recipient it returns a 403 error.
- *  Gmail SMTP has NO such restriction — it can deliver to any email on earth.
+ * Sends a verification OTP email directly to the student's email address.
+ * No forwarding or fallback to personal email.
  */
 export async function sendVerificationEmail(
   toEmail: string,
@@ -160,39 +117,26 @@ export async function sendVerificationEmail(
     `This code expires in 10 minutes.\n` +
     `If you did not request this, please ignore this email.`;
 
-  // ── Strategy 1: Gmail SMTP (PRIMARY — works for ALL recipients) ────────────
-  console.log(`[UniMate Email] Sending OTP to ${cleanToEmail} via Gmail SMTP...`);
+  console.log(`[UniMate Email] Sending OTP code directly to student: ${cleanToEmail}`);
   const smtpResult = await sendViaGmailSMTP(cleanToEmail, subject, html, text);
-  if (smtpResult.success) return { success: true };
 
-  console.warn(`[UniMate Email] Gmail SMTP failed: ${smtpResult.error}`);
+  if (smtpResult.success) {
+    return { success: true };
+  }
 
-  // ── Strategy 2: Resend (FALLBACK — free tier only works for owner's email) ─
-  // This will succeed for `ahmadkha8143@gmail.com` but fail for others.
-  // It is kept as a backup in case SMTP is temporarily down.
-  console.log(`[UniMate Email] Trying Resend fallback for ${cleanToEmail}...`);
-  const resendResult = await sendViaResend(cleanToEmail, subject, html, text);
-  if (resendResult.success) return { success: true };
+  console.warn(`[UniMate Email] SMTP dispatch failed for ${cleanToEmail}: ${smtpResult.error}`);
 
-  console.warn(`[UniMate Email] Resend also failed: ${resendResult.error}`);
-
-  // ── Strategy 3: Dev console fallback ─────────────────────────────────────
+  // Development console log helper if SMTP password fails
   console.log(
     `\n[UniMate Dev] ================================================\n` +
     `[UniMate Dev] 📧 OTP CODE for ${cleanToEmail}: ${otpCode}\n` +
-    `[UniMate Dev] (Fix SMTP_PASS in .env.local to send real emails)\n` +
+    `[UniMate Dev] Status: SMTP Error (${smtpResult.error})\n` +
     `[UniMate Dev] ================================================\n`
   );
 
-  if (process.env.NODE_ENV === 'production') {
-    return {
-      success: false,
-      error:
-        `Email delivery failed. Gmail SMTP error: ${smtpResult.error}. ` +
-        `Please verify your SMTP_PASS (Gmail App Password) in environment variables.`,
-    };
-  }
-
-  // In development, return success so the OTP flow can be tested using the console log above
-  return { success: true };
+  return {
+    success: false,
+    error: `Could not deliver verification email to ${cleanToEmail}. ${smtpResult.error || 'Please make sure the email address is correct.'}`,
+  };
 }
+

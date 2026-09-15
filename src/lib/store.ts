@@ -120,7 +120,11 @@ export class UniMateStore {
         if (cachedProfiles) {
           const parsedProfiles = JSON.parse(cachedProfiles);
           if (parsedProfiles && Array.isArray(parsedProfiles) && parsedProfiles.length) {
-            this.profiles = parsedProfiles;
+            const PURGED_MOCK = new Set(['student-zain-ali-2026', 'student-fatima-noor-2026', 'student-hamza-tariq-2026', 'zain.ali@kfueit.edu.pk', 'fatima.noor@kfueit.edu.pk', 'hamza.tariq@kfueit.edu.pk']);
+            this.profiles = parsedProfiles.filter((p: any) => !PURGED_MOCK.has(p.id) && !PURGED_MOCK.has(p.email?.toLowerCase()));
+            if (!this.profiles.some((p) => p.role === 'admin')) {
+              this.profiles.unshift(...INITIAL_PROFILES);
+            }
           }
         }
       } catch (e) {}
@@ -593,26 +597,52 @@ export class UniMateStore {
   }
 
   public static toggleUserSuspension(userId: string): boolean {
-    const user = this.profiles.find((p) => p.id === userId);
-    if (!user) return false;
-    user.is_suspended = !user.is_suspended;
+    let updatedStatus = false;
+    let found = false;
+    this.profiles = this.profiles.map((p) => {
+      if (p.id === userId) {
+        found = true;
+        updatedStatus = !p.is_suspended;
+        return { ...p, is_suspended: updatedStatus, updated_at: new Date().toISOString() };
+      }
+      return p;
+    });
+
+    if (!found) return false;
+
     this.persistProfiles();
     this.notify();
 
     const supabase = createClient();
     if (supabase) {
-      supabase.from('profiles').update({ is_suspended: user.is_suspended }).eq('id', userId).then(({ error }) => {
+      supabase.from('profiles').update({ is_suspended: updatedStatus }).eq('id', userId).then(({ error }) => {
         if (error) console.error('Error toggling suspension in Supabase:', error);
       });
     }
-    return user.is_suspended;
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, action: 'toggle_suspension', is_suspended: updatedStatus })
+      }).catch((e) => console.warn('Admin sync error:', e));
+    }
+
+    return updatedStatus;
   }
 
   public static updateUserRole(userId: string, newRole: UserRole): boolean {
-    const user = this.profiles.find((p) => p.id === userId);
-    if (!user) return false;
-    user.role = newRole;
-    user.updated_at = new Date().toISOString();
+    let found = false;
+    this.profiles = this.profiles.map((p) => {
+      if (p.id === userId) {
+        found = true;
+        return { ...p, role: newRole, updated_at: new Date().toISOString() };
+      }
+      return p;
+    });
+
+    if (!found) return false;
+
     this.persistProfiles();
     this.notify();
 
@@ -622,6 +652,15 @@ export class UniMateStore {
         if (error) console.error('Error updating user role in Supabase:', error);
       });
     }
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, action: 'update_role', role: newRole })
+      }).catch((e) => console.warn('Admin sync error:', e));
+    }
+
     return true;
   }
 
