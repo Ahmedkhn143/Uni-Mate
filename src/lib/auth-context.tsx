@@ -22,6 +22,8 @@ interface AuthContextType {
     departmentId: string;
     program: string;
     semester: number;
+    regNo?: string;
+    isAnonymous?: boolean;
     studentId?: string;
     avatarUrl?: string;
   }) => Promise<{ success: boolean; error?: string; requiresVerification?: boolean }>;
@@ -34,6 +36,8 @@ interface AuthContextType {
       departmentId?: string;
       program?: string;
       semester?: number;
+      regNo?: string;
+      isAnonymous?: boolean;
       studentId?: string;
       avatarUrl?: string;
     }
@@ -184,6 +188,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           department_name: 'Department of Computer Science & IT',
           program: 'BS Computer Science (Super Admin)',
           semester: 8,
+          reg_no: 'ADMIN-2022-001',
+          is_anonymous: false,
           avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
           is_suspended: false,
           created_at: new Date().toISOString(),
@@ -262,6 +268,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     departmentId: string;
     program: string;
     semester: number;
+    regNo?: string;
+    isAnonymous?: boolean;
     studentId?: string;
     avatarUrl?: string;
   }): Promise<{ success: boolean; error?: string; requiresVerification?: boolean }> => {
@@ -302,6 +310,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       departmentId?: string;
       program?: string;
       semester?: number;
+      regNo?: string;
+      isAnonymous?: boolean;
       studentId?: string;
       avatarUrl?: string;
     }
@@ -420,6 +430,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateCurrentUserProfile = async (updates: Partial<Profile>) => {
     if (!user) return;
     const updated = { ...user, ...updates, updated_at: new Date().toISOString() };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('unimate_active_user', JSON.stringify(updated));
+    }
+    UniMateStore.saveProfile(updated);
     setUser(updated);
 
     const supabase = createClient();

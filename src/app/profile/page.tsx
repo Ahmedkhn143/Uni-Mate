@@ -16,7 +16,10 @@ import {
   ShieldCheck,
   Camera,
   Upload,
-  X
+  X,
+  Hash,
+  Lock,
+  Globe
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -30,6 +33,8 @@ export default function ProfilePage() {
   const [bio, setBio] = useState(user?.bio || '');
   const [semester, setSemester] = useState(user?.semester || 1);
   const [program, setProgram] = useState(user?.program || '');
+  const [regNo, setRegNo] = useState(user?.reg_no || '');
+  const [isAnonymous, setIsAnonymous] = useState(user?.is_anonymous || false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url || null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,6 +76,8 @@ export default function ProfilePage() {
       bio: bio.trim(),
       semester: Number(semester),
       program: resolvedProg,
+      reg_no: regNo.trim() || undefined,
+      is_anonymous: isAnonymous,
       avatar_url: avatarPreview || undefined
     });
     setIsEditing(false);
@@ -111,6 +118,33 @@ export default function ProfilePage() {
                 <span>•</span>
                 <span>Semester {user.semester || 1}</span>
               </div>
+
+              {/* Badges for Registration Number and Anonymity */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {user.reg_no ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-800/60 text-[11px] font-mono font-bold text-indigo-700 dark:text-indigo-300">
+                    <Hash className="w-3 h-3 text-indigo-500" />
+                    <span>Reg #: {user.reg_no}</span>
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-dashed border-indigo-300 dark:border-indigo-700 text-[11px] font-mono text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+                  >
+                    <span>+ Add Reg #</span>
+                  </button>
+                )}
+
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold border ${
+                  user.is_anonymous
+                    ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'
+                    : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                }`}>
+                  {user.is_anonymous ? <Lock className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                  <span>{user.is_anonymous ? 'Anonymous Mode Active (Peers only see name)' : 'Public Profile'}</span>
+                </span>
+              </div>
+
             </div>
           </div>
 
@@ -211,6 +245,52 @@ export default function ProfilePage() {
                   placeholder="e.g. Computer Science, Cyber Security, etc."
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
                 />
+              </div>
+            </div>
+
+            {/* Registration Number */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Student Registration Number
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono select-none">#</span>
+                <input
+                  type="text"
+                  value={regNo}
+                  onChange={(e) => setRegNo(e.target.value)}
+                  placeholder="e.g. BSCS-2022-45 or 2022-CS-0045"
+                  className="w-full pl-7 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Anonymous Mode Toggle */}
+            <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => setIsAnonymous((prev) => !prev)}
+                className={`relative shrink-0 mt-0.5 w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  isAnonymous ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                    isAnonymous ? 'translate-x-4' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+              <div className="space-y-0.5">
+                <label
+                  onClick={() => setIsAnonymous((prev) => !prev)}
+                  className="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer flex items-center gap-1.5"
+                >
+                  <Lock className="w-3 h-3 text-indigo-500" />
+                  <span>Post Anonymously by Default</span>
+                </label>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  When enabled, other students only see your name or <strong>"Anonymous Student"</strong>; your registration number & email remain strictly hidden. Admins always see complete details for campus safety.
+                </p>
               </div>
             </div>
 

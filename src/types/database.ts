@@ -12,6 +12,8 @@ export interface Profile {
   avatar_url?: string;
   bio?: string;
   student_id?: string;
+  reg_no?: string;           // Registration number (e.g. BSCS-2022-45)
+  is_anonymous?: boolean;   // User prefers to post anonymously by default
   is_suspended: boolean;
   created_at: string;
   updated_at: string;
@@ -109,6 +111,9 @@ export interface Post {
   author_name: string;
   author_avatar?: string;
   author_role: UserRole;
+  author_real_name?: string;   // Real name stored server-side (only visible to admin)
+  author_reg_no?: string;      // Registration number (only visible to admin for accountability)
+  is_anonymous?: boolean;      // If true, show 'Anonymous Student' to other users
   category: PostCategory;
   title: string;
   content: string;

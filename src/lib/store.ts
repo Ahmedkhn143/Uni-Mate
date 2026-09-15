@@ -199,6 +199,8 @@ export class UniMateStore {
             avatar_url: p.avatar_url,
             bio: p.bio,
             student_id: p.student_id,
+            reg_no: p.reg_no || undefined,
+            is_anonymous: p.is_anonymous || false,
             is_suspended: p.is_suspended || false,
             created_at: p.created_at,
             updated_at: p.updated_at
@@ -538,6 +540,8 @@ export class UniMateStore {
             avatar_url: p.avatar_url,
             bio: p.bio,
             student_id: p.student_id,
+            reg_no: p.reg_no || undefined,
+            is_anonymous: p.is_anonymous || false,
             is_suspended: p.is_suspended || false,
             created_at: p.created_at,
             updated_at: p.updated_at
@@ -973,15 +977,20 @@ export class UniMateStore {
     content: string;
     tags: string[];
     image_url?: string;
+    is_anonymous?: boolean;
   }): Post {
     const tempId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'post_' + Date.now();
     const isApproved = data.author.role === 'admin';
+    const isAnon = data.is_anonymous ?? (data.author.is_anonymous || false);
     const newPost: Post = {
       id: tempId,
       author_id: data.author.id,
-      author_name: data.author.full_name,
-      author_avatar: data.author.avatar_url,
+      author_name: isAnon ? 'Anonymous Student' : data.author.full_name,
+      author_real_name: data.author.full_name,
+      author_reg_no: data.author.reg_no,
+      author_avatar: isAnon ? undefined : data.author.avatar_url,
       author_role: data.author.role,
+      is_anonymous: isAnon,
       category: data.category,
       title: data.title,
       content: data.content,
@@ -1586,8 +1595,10 @@ export class UniMateStore {
 
   // --- PLATFORM STATS ---
   public static getStats() {
+    const students = this.profiles.filter((p) => p.role === 'student').length;
     return {
-      totalStudents: this.profiles.filter((p) => p.role === 'student').length,
+      totalStudents: students > 0 ? students : this.profiles.length,
+      totalUsers: this.profiles.length,
       totalModerators: this.profiles.filter((p) => p.role === 'moderator').length,
       activeQuestions: this.questions.length,
       totalAnswers: this.answers.length,

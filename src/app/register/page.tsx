@@ -43,6 +43,8 @@ export default function RegisterPage() {
   const [customDepartment, setCustomDepartment] = useState('');
   const [program, setProgram] = useState('');
   const [semester, setSemester] = useState(1);
+  const [regNo, setRegNo] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   // Optional Profile Picture
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -161,6 +163,8 @@ export default function RegisterPage() {
       departmentId: finalDept,
       program: finalProgram,
       semester: Number(semester),
+      regNo: regNo.trim() || undefined,
+      isAnonymous,
       avatarUrl: avatarPreview || undefined
     });
 
@@ -262,6 +266,8 @@ export default function RegisterPage() {
         departmentId: finalDept,
         program: finalProgram,
         semester: Number(semester),
+        regNo: regNo.trim() || undefined,
+        isAnonymous,
         avatarUrl: avatarPreview || undefined
       }
     );
@@ -483,6 +489,50 @@ export default function RegisterPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Registration Number */}
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Registration Number <span className="text-slate-400 font-normal">(Optional)</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono select-none">#</span>
+                <input
+                  type="text"
+                  value={regNo}
+                  onChange={(e) => setRegNo(e.target.value)}
+                  placeholder="e.g. BSCS-2022-45 or 2022-CS-0045"
+                  className="w-full pl-7 pr-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition font-mono"
+                />
+              </div>
+              <p className="text-[10px] text-slate-400">Your university-issued student ID / registration number</p>
+            </div>
+
+            {/* Anonymous Mode Toggle */}
+            <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 flex items-start gap-3">
+              <button
+                type="button"
+                id="anonymous-toggle"
+                onClick={() => setIsAnonymous((v) => !v)}
+                className={`relative shrink-0 mt-0.5 w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  isAnonymous ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                    isAnonymous ? 'translate-x-4' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+              <div>
+                <label htmlFor="anonymous-toggle" className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                  Post Anonymously by Default
+                </label>
+                <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">
+                  When enabled, your posts will show as <strong>"Anonymous Student"</strong> to other users. Admins can always see your real identity for safety purposes.
+                </p>
+              </div>
             </div>
 
             {/* Password & Confirm */}

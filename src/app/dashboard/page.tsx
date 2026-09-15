@@ -29,7 +29,12 @@ import {
   X,
   User,
   Save,
-  Upload
+  Upload,
+  Users,
+  Layers,
+  Hash,
+  Lock,
+  Globe
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -48,6 +53,8 @@ export default function DashboardPage() {
   const [editFullName, setEditFullName] = useState('');
   const [editProgram, setEditProgram] = useState('');
   const [editSemester, setEditSemester] = useState(1);
+  const [editRegNo, setEditRegNo] = useState('');
+  const [editIsAnonymous, setEditIsAnonymous] = useState(false);
   const [editBio, setEditBio] = useState('');
   const [editAvatarPreview, setEditAvatarPreview] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -58,6 +65,8 @@ export default function DashboardPage() {
     setEditFullName(user.full_name || '');
     setEditProgram(user.program || '');
     setEditSemester(user.semester || 1);
+    setEditRegNo(user.reg_no || '');
+    setEditIsAnonymous(user.is_anonymous || false);
     setEditBio(user.bio || '');
     setEditAvatarPreview(user.avatar_url || null);
     setProfileMsg('');
@@ -91,6 +100,8 @@ export default function DashboardPage() {
       full_name: editFullName.trim(),
       program: finalProgram,
       semester: Number(editSemester),
+      reg_no: editRegNo.trim() || undefined,
+      is_anonymous: editIsAnonymous,
       bio: editBio.trim(),
       avatar_url: editAvatarPreview || undefined
     });
@@ -228,6 +239,42 @@ export default function DashboardPage() {
                 </button>
               </div>
 
+              {/* Student Registration Number & Anonymity Badges */}
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                {user.reg_no ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-black/25 backdrop-blur-md text-[11px] font-mono font-bold text-indigo-100 border border-white/10">
+                    <Hash className="w-3 h-3 text-emerald-300" />
+                    <span>Reg #: {user.reg_no}</span>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openEditProfile}
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-black/25 hover:bg-black/40 backdrop-blur-md text-[11px] font-mono font-semibold text-amber-200 border border-amber-300/30 transition"
+                  >
+                    <span>+ Add Reg #</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={openEditProfile}
+                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold backdrop-blur-md border transition ${
+                    user.is_anonymous
+                      ? 'bg-amber-500/25 border-amber-300/40 text-amber-200 hover:bg-amber-500/35'
+                      : 'bg-emerald-500/25 border-emerald-300/40 text-emerald-200 hover:bg-emerald-500/35'
+                  }`}
+                  title={
+                    user.is_anonymous
+                      ? 'Anonymous Mode Active: Other students only see your display name; your reg # and email are hidden. Admins see full details.'
+                      : 'Public Profile: Your campus profile is visible to fellow students.'
+                  }
+                >
+                  {user.is_anonymous ? <Lock className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                  <span>{user.is_anonymous ? '🔒 Anonymous Mode Active' : '🌐 Public Profile'}</span>
+                </button>
+              </div>
+
               <p className="text-xs sm:text-sm text-indigo-100 leading-relaxed">
                 {user.program || 'Student'} {user.semester ? `• Semester ${user.semester}` : ''} | Keep up with latest course questions, lost items, and midterm preparation papers.
               </p>
@@ -236,23 +283,150 @@ export default function DashboardPage() {
 
           {/* Quick Metrics */}
           {stats && (
-            <div className="flex items-center gap-3 bg-black/20 backdrop-blur-md p-3.5 rounded-2xl border border-white/10 text-center">
-              <div className="px-3 border-r border-white/10">
-                <div className="text-lg font-black">{stats.activeQuestions}</div>
-                <div className="text-[10px] text-indigo-200">Active Q&A</div>
+            <div className="flex items-center gap-2 sm:gap-3 bg-black/25 backdrop-blur-md p-3 sm:p-3.5 rounded-2xl border border-white/10 text-center shrink-0">
+              <div className="px-2.5 sm:px-3 border-r border-white/10">
+                <div className="text-base sm:text-lg font-black text-white">{stats.totalPosts ?? 0}</div>
+                <div className="text-[10px] text-indigo-200 font-medium">Campus Posts</div>
               </div>
-              <div className="px-3 border-r border-white/10">
-                <div className="text-lg font-black">{stats.pastPapersCount}</div>
-                <div className="text-[10px] text-indigo-200">Past Papers</div>
+              <div className="px-2.5 sm:px-3 border-r border-white/10">
+                <div className="text-base sm:text-lg font-black text-white">{stats.totalStudents ?? 0}</div>
+                <div className="text-[10px] text-indigo-200 font-medium">Students</div>
               </div>
-              <div className="px-3">
-                <div className="text-lg font-black">{stats.lostItems + stats.foundItems}</div>
-                <div className="text-[10px] text-indigo-200">Lost & Found</div>
+              <div className="px-2.5 sm:px-3 border-r border-white/10">
+                <div className="text-base sm:text-lg font-black text-white">{stats.activeQuestions ?? 0}</div>
+                <div className="text-[10px] text-indigo-200 font-medium">Active Q&A</div>
+              </div>
+              <div className="px-2.5 sm:px-3">
+                <div className="text-base sm:text-lg font-black text-white">{stats.pastPapersCount ?? 0}</div>
+                <div className="text-[10px] text-indigo-200 font-medium">Past Papers</div>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* 2. CAMPUS OVERVIEW & PLATFORM COUNTERS */}
+      {stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          {/* Post Counter Card */}
+          <Link
+            href="/community"
+            className="group p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-600 transition-all duration-200 flex flex-col justify-between space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
+                <Layers className="w-5 h-5" />
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                Community
+              </span>
+            </div>
+            <div>
+              <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                {stats.totalPosts ?? 0}
+              </div>
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                Total Campus Posts
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Announcements, discussions & study resources
+              </p>
+            </div>
+            <div className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              <span>View Community Feed</span>
+              <ArrowRight className="w-3 h-3" />
+            </div>
+          </Link>
+
+          {/* User Counter Card */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <Users className="w-5 h-5" />
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Network
+              </span>
+            </div>
+            <div>
+              <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                {stats.totalStudents ?? 0}
+              </div>
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                Enrolled Students & Users
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Verified KFUEIT campus community members
+              </p>
+            </div>
+            <div className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" />
+              <span>Campus Verified Accounts</span>
+            </div>
+          </div>
+
+          {/* Active Q&A Card */}
+          <Link
+            href="/questions"
+            className="group p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-purple-400 dark:hover:border-purple-600 transition-all duration-200 flex flex-col justify-between space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-950/70 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform">
+                <HelpCircle className="w-5 h-5" />
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+                {stats.totalAnswers ?? 0} Solutions
+              </span>
+            </div>
+            <div>
+              <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                {stats.activeQuestions ?? 0}
+              </div>
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                Active Q&A Discussions
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Subject queries and midterm peer assistance
+              </p>
+            </div>
+            <div className="text-[11px] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              <span>Ask or Answer →</span>
+            </div>
+          </Link>
+
+          {/* Exam Archive Card */}
+          <Link
+            href="/past-papers"
+            className="group p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-amber-400 dark:hover:border-amber-600 transition-all duration-200 flex flex-col justify-between space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
+                <FileText className="w-5 h-5" />
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                Verified
+              </span>
+            </div>
+            <div>
+              <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                {stats.pastPapersCount ?? 0}
+              </div>
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                Past Exam Papers
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Departmental midterms, finals & solved papers
+              </p>
+            </div>
+            <div className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              <span>Browse Archive →</span>
+            </div>
+          </Link>
+
+        </div>
+      )}
 
       {/* 2. QUICK ACTIONS BAR */}
       <div className="space-y-3">
@@ -669,6 +843,53 @@ export default function DashboardPage() {
                       <option key={s} value={s}>Semester {s}</option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              {/* Registration Number Field */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Student Registration Number
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono select-none">#</span>
+                  <input
+                    type="text"
+                    value={editRegNo}
+                    onChange={(e) => setEditRegNo(e.target.value)}
+                    placeholder="e.g. BSCS-2022-45 or 2022-CS-0045"
+                    className="w-full pl-7 pr-3 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition font-mono"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400">Official student registration roll number</p>
+              </div>
+
+              {/* Anonymous Mode Privacy Setting */}
+              <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 flex items-start gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditIsAnonymous((prev) => !prev)}
+                  className={`relative shrink-0 mt-0.5 w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    editIsAnonymous ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                      editIsAnonymous ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <div className="space-y-0.5">
+                  <label
+                    onClick={() => setEditIsAnonymous((prev) => !prev)}
+                    className="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Lock className="w-3 h-3 text-indigo-500" />
+                    <span>Post Anonymously by Default</span>
+                  </label>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    When enabled, other students only see your display name or <strong>"Anonymous Student"</strong>; your registration number & email are strictly hidden. Administrators always retain verified access for university safety.
+                  </p>
                 </div>
               </div>
 

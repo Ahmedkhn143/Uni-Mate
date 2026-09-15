@@ -16,12 +16,18 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     program TEXT,
     semester INT CHECK (semester >= 1 AND semester <= 12),
     student_id TEXT,
+    reg_no TEXT,
+    is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
     avatar_url TEXT,
     bio TEXT,
     is_suspended BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Ensure columns exist if migrating existing DB:
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS reg_no TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_anonymous BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- 2. DEPARTMENTS TABLE
 CREATE TABLE IF NOT EXISTS public.departments (

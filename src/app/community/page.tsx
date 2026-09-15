@@ -13,7 +13,9 @@ import {
   Image as ImageIcon,
   Tag,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Lock,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -42,6 +44,7 @@ export default function CommunityPage() {
   const [postImageUrl, setPostImageUrl] = useState('');
   const [postTagInput, setPostTagInput] = useState('');
   const [postTags, setPostTags] = useState<string[]>([]);
+  const [postIsAnonymous, setPostIsAnonymous] = useState(false);
   
   // Inline Comment State
   const [openCommentsPostId, setOpenCommentsPostId] = useState<string | null>(null);
@@ -81,7 +84,8 @@ export default function CommunityPage() {
       title: postTitle.trim(),
       content: postContent.trim(),
       tags: postTags,
-      image_url: postImageUrl.trim() || undefined
+      image_url: postImageUrl.trim() || undefined,
+      is_anonymous: postIsAnonymous
     });
 
     setPostTitle('');
@@ -173,23 +177,43 @@ export default function CommunityPage() {
               {/* Author Row & Category */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  {post.author_avatar ? (
-                    <img src={post.author_avatar} alt={post.author_name} className="w-9 h-9 rounded-xl object-cover" />
+                  {post.is_anonymous ? (
+                    <div className="w-9 h-9 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
+                      <Lock className="w-4 h-4" />
+                    </div>
+                  ) : post.author_avatar ? (
+                    <img src={post.author_avatar} alt={post.author_name} className="w-9 h-9 rounded-xl object-cover shrink-0" />
                   ) : (
-                    <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
                       {post.author_name.charAt(0)}
                     </div>
                   )}
                   <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{post.author_name}</span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        {post.is_anonymous ? 'Anonymous Student' : post.author_name}
+                      </span>
                       {post.author_role === 'admin' && (
                         <span className="text-[10px] font-bold px-1.5 py-0.2 bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 rounded flex items-center gap-0.5">
                           <ShieldCheck className="w-2.5 h-2.5" /> Staff
                         </span>
                       )}
+                      {post.is_anonymous && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center gap-0.5">
+                          <Lock className="w-2.5 h-2.5 text-indigo-500" /> Anonymous
+                        </span>
+                      )}
                     </div>
-                    <span className="text-[10px] text-slate-400">{new Date(post.created_at).toLocaleDateString()}</span>
+
+                    {/* ADMIN VIEW ONLY: Display verified real identity & registration number */}
+                    {(user?.role === 'admin' || user?.role === 'moderator') && post.is_anonymous && (
+                      <div className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-[10px] text-amber-800 dark:text-amber-200 font-mono">
+                        <Shield className="w-2.5 h-2.5 text-amber-600 shrink-0" />
+                        <span>Admin Verified: <strong>{post.author_real_name || post.author_name}</strong> {post.author_reg_no ? `• ${post.author_reg_no}` : ''}</span>
+                      </div>
+                    )}
+
+                    <span className="text-[10px] text-slate-400 block mt-0.5">{new Date(post.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
 
@@ -369,6 +393,35 @@ export default function CommunityPage() {
                   placeholder="https://example.com/flyer.jpg"
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
                 />
+              </div>
+
+              {/* Anonymous Post Toggle */}
+              <div className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 flex items-start gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPostIsAnonymous((v) => !v)}
+                  className={`relative shrink-0 mt-0.5 w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    postIsAnonymous ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                      postIsAnonymous ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <div className="space-y-0.5">
+                  <label
+                    onClick={() => setPostIsAnonymous((v) => !v)}
+                    className="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Lock className="w-3 h-3 text-indigo-500" />
+                    <span>Publish Anonymously</span>
+                  </label>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Your post will show as <strong>"Anonymous Student"</strong> to fellow students. Campus admins always retain verified faculty access.
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
