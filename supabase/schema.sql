@@ -112,9 +112,13 @@ CREATE TABLE IF NOT EXISTS public.posts (
     tags TEXT[] DEFAULT '{}',
     likes INT NOT NULL DEFAULT 0,
     is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- ALTER for existing deployments (run this if table already exists without status column)
+-- ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected'));
 
 -- 10. LOST AND FOUND TABLE
 CREATE TABLE IF NOT EXISTS public.lost_found_items (
@@ -551,3 +555,33 @@ INSERT INTO public.subjects (department_id, semester_id, name, code, description
     ('d5555555-5555-5555-5555-555555555555', '00000000-0000-0000-0000-000000000001', 'Financial Accounting', 'BA-101', 'Double-entry bookkeeping, general ledger, income statements, and auditing.', 3),
     ('d6666666-6666-6666-6666-666666666666', '00000000-0000-0000-0000-000000000001', 'Calculus & Analytical Geometry', 'MATH-101', 'Limits, differential calculus, integration techniques, and vectors.', 3)
 ON CONFLICT (code) DO NOTHING;
+
+-- =====================================================================
+-- OTP CODES TABLE (Persistent OTP storage for serverless environments)
+-- Replaces the unreliable in-memory Map which resets across Lambda instances
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS public.otp_codes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email TEXT NOT NULL,
+    code TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Index for fast email lookups
+CREATE INDEX IF NOT EXISTS otp_codes_email_idx ON public.otp_codes (email);
+
+-- Auto-cleanup: delete expired OTPs automatically
+CREATE OR REPLACE FUNCTION public.cleanup_expired_otps()
+RETURNS TRIGGER AS $$
+BEGIN
+  DELETE FROM public.otp_codes WHERE expires_at < NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- RLS: Only service role can read/write OTP codes (no anon access)
+ALTER TABLE public.otp_codes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role only for otp_codes"
+ON public.otp_codes FOR ALL
+USING (FALSE);

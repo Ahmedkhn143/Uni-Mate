@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { saveOtp } from '@/lib/otp-store';
 import { sendVerificationEmail } from '@/lib/email';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
   try {
@@ -8,7 +8,10 @@ export async function POST(request: Request) {
     const { email, fullName } = body;
 
     if (!email || !email.includes('@')) {
-      return NextResponse.json({ success: false, error: 'Please enter a valid university email.' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Please enter a valid university email address.' },
+        { status: 400 }
+      );
     }
 
     const cleanEmail = email.trim().toLowerCase();
@@ -18,16 +21,16 @@ export async function POST(request: Request) {
     const domainList = allowedDomain.split(',').map((d) => d.trim().toLowerCase());
     const emailDomain = cleanEmail.split('@')[1]?.toLowerCase() || '';
 
-    const isAllowed = 
+    const isAllowed =
       domainList.some((d) => emailDomain === d || emailDomain.endsWith('.' + d)) ||
       emailDomain.endsWith('.edu.pk') ||
       emailDomain === 'kfueit.edu.pk';
 
     if (!isAllowed) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: `Please provide an approved university email address (@${domainList.join(', @')} or any university @*.edu.pk domain).` 
+        {
+          success: false,
+          error: `Please provide an approved university email address (@${domainList.join(', @')} or any @*.edu.pk domain).`,
         },
         { status: 400 }
       );
@@ -35,29 +38,65 @@ export async function POST(request: Request) {
 
     // Generate cryptographic 6-digit OTP
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
 
-    // Save in secure store
-    saveOtp(cleanEmail, code);
+    // Persist OTP in Supabase (service role bypasses RLS) so it survives across
+    // serverless function instances (fixes the critical in-memory Map bug on Vercel).
+    const supabase = createServiceRoleClient();
+    if (supabase) {
+      // Remove any stale OTPs for this email first
+      await supabase.from('otp_codes').delete().eq('email', cleanEmail);
+      // Insert fresh OTP
+      const { error: insertErr } = await supabase.from('otp_codes').insert({
+        email: cleanEmail,
+        code,
+        expires_at: expiresAt,
+      });
+      if (insertErr) {
+        console.error('[UniMate OTP] Failed to save OTP to Supabase:', insertErr.message);
+        // Fall back to the in-memory store as a last resort (dev only)
+        const { saveOtp } = await import('@/lib/otp-store');
+        saveOtp(cleanEmail, code);
+      }
+    } else {
+      // No service role key available — fall back to in-memory for local dev
+      console.warn(
+        '[UniMate OTP] SUPABASE_SERVICE_ROLE_KEY not set. ' +
+        'Falling back to in-memory OTP store (will NOT work on serverless deployments).'
+      );
+      const { saveOtp } = await import('@/lib/otp-store');
+      saveOtp(cleanEmail, code);
+    }
 
-    // Send the real email directly to university inbox
+    // Send the real email directly to the student's university inbox
     const emailResult = await sendVerificationEmail(cleanEmail, code, fullName);
 
     if (!emailResult.success) {
-      console.warn('[UniMate Email Warning] Delivery failed:', emailResult.error);
+      console.warn('[UniMate Email Warning] Email delivery failed:', emailResult.error);
+      // Clean up the saved OTP since the email didn't go through
+      if (supabase) {
+        await supabase.from('otp_codes').delete().eq('email', cleanEmail);
+      }
       return NextResponse.json(
-        { 
-          success: false, 
-          error: `Could not send verification code to your university email: ${emailResult.error || 'Mail delivery failed'}. Please check the email address and try again.` 
+        {
+          success: false,
+          error:
+            `Could not send verification code to ${cleanEmail}: ` +
+            (emailResult.error || 'Mail delivery failed') +
+            '. Please check your email address and try again.',
         },
         { status: 500 }
       );
     }
 
+    console.log(`[UniMate OTP] Successfully dispatched OTP to ${cleanEmail}`);
+
     return NextResponse.json({
       success: true,
-      message: `A 6-digit confirmation code has been sent to ${cleanEmail}. Please check your university inbox (and spam/junk folder).`
+      message: `A 6-digit confirmation code has been sent to ${cleanEmail}. Please check your inbox (and spam/junk folder).`,
     });
   } catch (err: any) {
+    console.error('[UniMate OTP] Unexpected error in send-otp:', err);
     return NextResponse.json(
       { success: false, error: err?.message || 'Failed to dispatch verification code.' },
       { status: 500 }

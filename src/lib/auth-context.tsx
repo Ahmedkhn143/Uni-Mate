@@ -311,7 +311,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanToken = token.trim();
 
     try {
-      // Verify 6-digit code against server OTP store
+      // Step 1: Verify the 6-digit OTP and create the Supabase auth user server-side
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -326,62 +326,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok || !resData.success) {
         setIsLoading(false);
-        return { 
-          success: false, 
-          error: resData.error || 'Invalid or expired confirmation code. Please check your university email.' 
+        return {
+          success: false,
+          error: resData.error || 'Invalid or expired confirmation code. Please check your university email.'
         };
       }
 
-      const verifiedProfile = resData.profile as Profile;
+      const verifiedProfile = resData.profile;
+      const studentPassword = profileData?.password || 'KFUEITStudent2026!';
 
-      // Register / Sync in Supabase Auth if client is configured
+      // Step 2: Sign in with Supabase to establish a real authenticated session.
+      // The API route has already created the user in auth.users (email_confirm=true),
+      // so signInWithPassword works immediately — no confirmation email needed.
       const supabase = createClient();
       if (supabase) {
-        const studentPassword = profileData?.password || 'KFUEITStudent2026!';
-        try {
-          const { data: authData, error: signUpErr } = await supabase.auth.signUp({
-            email: cleanEmail,
-            password: studentPassword,
-            options: {
-              data: {
-                full_name: profileData?.fullName || verifiedProfile.full_name,
-                role: 'student'
-              }
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password: studentPassword,
+        });
+
+        if (signInErr) {
+          console.warn('[UniMate Auth] Sign-in after registration warning:', signInErr.message);
+          // Non-fatal — user was created, they can sign in manually later
+        } else if (signInData?.user) {
+          // Reload the profile from Supabase to get the authoritative version
+          const { data: freshProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', signInData.user.id)
+            .maybeSingle();
+
+          if (freshProfile) {
+            const fullProfile = { ...verifiedProfile, ...freshProfile } as Profile;
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('unimate_active_user', JSON.stringify(fullProfile));
             }
-          });
-
-          let finalUserId = authData?.user?.id;
-
-          if (!finalUserId && signUpErr) {
-            const { data: signInData } = await supabase.auth.signInWithPassword({
-              email: cleanEmail,
-              password: studentPassword
-            });
-            finalUserId = signInData?.user?.id;
+            UniMateStore.saveProfile(fullProfile);
+            setUser(fullProfile);
+            setIsLoading(false);
+            return { success: true };
           }
-
-          if (finalUserId) {
-            verifiedProfile.id = finalUserId;
-            await supabase.from('profiles').update({
-              full_name: profileData?.fullName || verifiedProfile.full_name,
-              role: 'student',
-              department_id: profileData?.departmentId,
-              program: profileData?.program,
-              semester: profileData?.semester,
-              avatar_url: profileData?.avatarUrl
-            }).eq('id', finalUserId);
-          }
-        } catch (authErr) {
-          console.warn('Supabase auth sync notice:', authErr);
         }
       }
 
+      // Fallback: use the profile returned from the API if Supabase sign-in
+      // was unavailable (e.g., no service role key in dev)
+      const fallbackProfile = verifiedProfile as Profile;
       if (typeof window !== 'undefined') {
-        localStorage.setItem('unimate_active_user', JSON.stringify(verifiedProfile));
+        localStorage.setItem('unimate_active_user', JSON.stringify(fallbackProfile));
       }
-
-      UniMateStore.saveProfile(verifiedProfile);
-      setUser(verifiedProfile);
+      UniMateStore.saveProfile(fallbackProfile);
+      setUser(fallbackProfile);
       setIsLoading(false);
       return { success: true };
     } catch (err: any) {
@@ -389,6 +384,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: err?.message || 'Verification failed. Please try again.' };
     }
   };
+
 
   const resendOtp = async (email: string): Promise<{ success: boolean; error?: string }> => {
     const cleanEmail = email.trim().toLowerCase();
