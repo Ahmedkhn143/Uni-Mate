@@ -1,17 +1,9 @@
 import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 
-export async function sendVerificationEmail(
-  toEmail: string,
-  otpCode: string,
-  studentName?: string
-): Promise<{ success: boolean; error?: string }> {
-  const cleanToEmail = toEmail.trim().toLowerCase();
-  const user = process.env.SMTP_USER || 'ahmadkha8143@gmail.com';
-  const pass = process.env.SMTP_PASS;
-  const resendApiKey = process.env.RESEND_API_KEY;
-
-  const htmlContent = `
+// ─── Email HTML Template ────────────────────────────────────────────────────
+function buildHtmlEmail(otpCode: string, studentName: string): string {
+  return `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;">
       <div style="text-align: center; margin-bottom: 24px;">
         <div style="display: inline-block; background: #4f46e5; color: #ffffff; font-weight: 700; padding: 8px 18px; border-radius: 10px; font-size: 15px; letter-spacing: 0.5px;">
@@ -22,118 +14,185 @@ export async function sendVerificationEmail(
         Your Verification Code
       </h2>
       <p style="color: #475569; font-size: 14px; line-height: 1.6; text-align: center; margin-bottom: 24px;">
-        Hello ${studentName || 'Student'}, use the following 6-digit confirmation code to complete your UniMate registration:
+        Hello <strong>${studentName}</strong>, use the 6-digit code below to complete your UniMate KFUEIT registration:
       </p>
-      <div style="background-color: #f1f5f9; border: 2px dashed #6366f1; border-radius: 14px; padding: 18px; text-align: center; margin-bottom: 24px;">
-        <span style="font-family: monospace; font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #4338ca;">
+      <div style="background-color: #f1f5f9; border: 2px dashed #6366f1; border-radius: 14px; padding: 24px; text-align: center; margin-bottom: 24px;">
+        <span style="font-family: 'Courier New', monospace; font-size: 40px; font-weight: 900; letter-spacing: 12px; color: #4338ca;">
           ${otpCode}
         </span>
       </div>
       <p style="color: #64748b; font-size: 12px; text-align: center; line-height: 1.6;">
         This code is valid for <strong>10 minutes</strong>.<br>
-        If you did not request this code, you can safely ignore this email.
+        If you did not request this, you can safely ignore this email.
+      </p>
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+      <p style="color: #94a3b8; font-size: 11px; text-align: center;">
+        UniMate — Official KFUEIT Student Community Platform
       </p>
     </div>
   `;
+}
 
-  const plainTextContent = `UniMate KFUEIT Verification Code: ${otpCode}\n\nHello ${studentName || 'Student'},\nYour 6-digit verification code is: ${otpCode}\n\nThis code expires in 10 minutes.\nIf you did not request this, please ignore this email.`;
+// ─── Gmail SMTP Transporter ─────────────────────────────────────────────────
+async function sendViaGmailSMTP(
+  toEmail: string,
+  subject: string,
+  html: string,
+  text: string
+): Promise<{ success: boolean; error?: string }> {
+  const smtpUser = process.env.SMTP_USER || 'ahmadkha8143@gmail.com';
+  const smtpPass = process.env.SMTP_PASS;
 
-  // Strategy 1: Try Resend SDK first (most reliable for transactional email)
-  // Resend free tier only allows sending TO the account owner's email.
-  // For any other recipient, it needs a verified custom domain.
-  if (resendApiKey && resendApiKey !== 're_placeholder') {
-    try {
-      const resend = new Resend(resendApiKey);
-      const { data, error } = await resend.emails.send({
-        from: 'onboarding@resend.dev',
-        to: cleanToEmail,
-        subject: `UniMate KFUEIT — Your Verification Code: ${otpCode}`,
-        text: plainTextContent,
-        html: htmlContent,
-      });
-
-      if (!error && data?.id) {
-        console.log(`[UniMate Resend] Delivered OTP to ${cleanToEmail}, ID: ${data.id}`);
-        return { success: true };
-      }
-
-      // Log the Resend error but continue to SMTP fallback
-      console.warn('[UniMate Resend] Resend error (falling back to Gmail SMTP):', error?.message || 'Unknown Resend error');
-    } catch (resendErr: any) {
-      console.warn('[UniMate Resend] Exception (falling back to Gmail SMTP):', resendErr?.message);
-    }
+  if (!smtpPass) {
+    return {
+      success: false,
+      error: 'SMTP_PASS is not set in environment variables. Please add your Gmail App Password to .env.local.',
+    };
   }
 
-  // Strategy 2: Gmail SMTP (can deliver to ANY email worldwide)
-  // Requires a valid Gmail App Password (not your normal password).
-  // To generate: Google Account → Security → 2-Step Verification → App passwords
-  if (user && pass && pass !== 'your-app-password-here') {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 465,
-        secure: true, // SSL
-        auth: { user, pass },
-        tls: {
-          rejectUnauthorized: false, // allow self-signed certs in dev
-        },
-      });
+  try {
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
 
-      // Verify SMTP connection before sending
-      await transporter.verify();
+    // Verify connection first — throws if credentials are wrong
+    await transporter.verify();
 
-      const info = await transporter.sendMail({
-        from: `"UniMate KFUEIT" <${user}>`,
-        to: cleanToEmail,
-        subject: `UniMate KFUEIT — Your Verification Code: ${otpCode}`,
-        text: plainTextContent,
-        html: htmlContent,
-      });
+    const info = await transporter.sendMail({
+      from: `"UniMate KFUEIT" <${smtpUser}>`,
+      to: toEmail,
+      subject,
+      text,
+      html,
+    });
 
-      console.log(`[UniMate SMTP] Delivered OTP to ${cleanToEmail}, MessageId: ${info.messageId}`);
-      return { success: true };
-    } catch (smtpErr: any) {
-      const errMsg = smtpErr?.message || 'SMTP error';
-      console.error('[UniMate SMTP] Delivery failed:', errMsg);
+    console.log(`[UniMate SMTP] ✅ Delivered to ${toEmail} — MessageId: ${info.messageId}`);
+    return { success: true };
+  } catch (err: any) {
+    const msg: string = err?.message || 'Unknown SMTP error';
+    console.error(`[UniMate SMTP] ❌ Failed to deliver to ${toEmail}:`, msg);
 
-      // Provide actionable error messages for common Gmail SMTP issues
-      if (errMsg.includes('Invalid login') || errMsg.includes('Username and Password not accepted')) {
-        return {
-          success: false,
-          error:
-            'Gmail SMTP authentication failed. Please verify your App Password in .env.local (SMTP_PASS). ' +
-            'Generate one at: Google Account → Security → 2-Step Verification → App passwords.',
-        };
-      }
-      if (errMsg.includes('Connection timeout') || errMsg.includes('ETIMEDOUT')) {
-        return {
-          success: false,
-          error: 'SMTP connection timed out. Please check your internet connection or firewall settings.',
-        };
-      }
-
-      return { success: false, error: errMsg };
+    if (msg.includes('Invalid login') || msg.includes('Username and Password not accepted') || msg.includes('BadCredentials')) {
+      return {
+        success: false,
+        error:
+          'Gmail App Password is incorrect. Go to: Google Account → Security → ' +
+          '2-Step Verification → App Passwords → generate a new one → paste into SMTP_PASS in .env.local',
+      };
     }
+    if (msg.includes('ETIMEDOUT') || msg.includes('Connection timeout')) {
+      return { success: false, error: 'SMTP connection timed out. Check your internet connection.' };
+    }
+    return { success: false, error: msg };
   }
+}
 
-  // Strategy 3: Dev-mode fallback — log the code to console so developers can
-  // test the OTP flow without email credentials configured.
+// ─── Resend SDK ──────────────────────────────────────────────────────────────
+async function sendViaResend(
+  toEmail: string,
+  subject: string,
+  html: string,
+  text: string
+): Promise<{ success: boolean; error?: string }> {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) return { success: false, error: 'No Resend API key.' };
+
+  try {
+    const resend = new Resend(resendApiKey);
+    const { data, error } = await resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: toEmail,
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      console.warn(`[UniMate Resend] ⚠️ Error for ${toEmail}:`, error.message);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`[UniMate Resend] ✅ Delivered to ${toEmail}, ID: ${data?.id}`);
+    return { success: true };
+  } catch (err: any) {
+    console.warn('[UniMate Resend] ❌ Exception:', err?.message);
+    return { success: false, error: err?.message };
+  }
+}
+
+// ─── Main Export ─────────────────────────────────────────────────────────────
+/**
+ * Sends a verification OTP email to the given address.
+ *
+ * Strategy:
+ *  1. Gmail SMTP  → primary for ALL emails (works with any recipient worldwide)
+ *  2. Resend      → fallback ONLY for the account owner's email (free tier limitation)
+ *  3. Console log → last resort in development so the flow can still be tested
+ *
+ * WHY Gmail SMTP first?
+ *  Resend free tier with `onboarding@resend.dev` can ONLY send to the Resend
+ *  account owner's verified email. For any other recipient it returns a 403 error.
+ *  Gmail SMTP has NO such restriction — it can deliver to any email on earth.
+ */
+export async function sendVerificationEmail(
+  toEmail: string,
+  otpCode: string,
+  studentName?: string
+): Promise<{ success: boolean; error?: string }> {
+  const cleanToEmail = toEmail.trim().toLowerCase();
+  const name = studentName?.trim() || 'Student';
+
+  const subject = `UniMate KFUEIT — Verification Code: ${otpCode}`;
+  const html = buildHtmlEmail(otpCode, name);
+  const text =
+    `UniMate KFUEIT Verification Code: ${otpCode}\n\n` +
+    `Hello ${name},\n` +
+    `Your 6-digit verification code is: ${otpCode}\n\n` +
+    `This code expires in 10 minutes.\n` +
+    `If you did not request this, please ignore this email.`;
+
+  // ── Strategy 1: Gmail SMTP (PRIMARY — works for ALL recipients) ────────────
+  console.log(`[UniMate Email] Sending OTP to ${cleanToEmail} via Gmail SMTP...`);
+  const smtpResult = await sendViaGmailSMTP(cleanToEmail, subject, html, text);
+  if (smtpResult.success) return { success: true };
+
+  console.warn(`[UniMate Email] Gmail SMTP failed: ${smtpResult.error}`);
+
+  // ── Strategy 2: Resend (FALLBACK — free tier only works for owner's email) ─
+  // This will succeed for `ahmadkha8143@gmail.com` but fail for others.
+  // It is kept as a backup in case SMTP is temporarily down.
+  console.log(`[UniMate Email] Trying Resend fallback for ${cleanToEmail}...`);
+  const resendResult = await sendViaResend(cleanToEmail, subject, html, text);
+  if (resendResult.success) return { success: true };
+
+  console.warn(`[UniMate Email] Resend also failed: ${resendResult.error}`);
+
+  // ── Strategy 3: Dev console fallback ─────────────────────────────────────
   console.log(
-    `\n[UniMate Dev] ========================================\n` +
-    `[UniMate Dev] OTP CODE for ${cleanToEmail}: ${otpCode}\n` +
-    `[UniMate Dev] (Configure SMTP_PASS or RESEND_API_KEY to send real emails)\n` +
-    `[UniMate Dev] ========================================\n`
+    `\n[UniMate Dev] ================================================\n` +
+    `[UniMate Dev] 📧 OTP CODE for ${cleanToEmail}: ${otpCode}\n` +
+    `[UniMate Dev] (Fix SMTP_PASS in .env.local to send real emails)\n` +
+    `[UniMate Dev] ================================================\n`
   );
 
-  // In development, we return success so the OTP flow can be tested
-  // without email credentials. In production, missing credentials is an error.
   if (process.env.NODE_ENV === 'production') {
     return {
       success: false,
       error:
-        'Email delivery is not configured. Please set SMTP_PASS (Gmail App Password) or RESEND_API_KEY in your environment variables.',
+        `Email delivery failed. Gmail SMTP error: ${smtpResult.error}. ` +
+        `Please verify your SMTP_PASS (Gmail App Password) in environment variables.`,
     };
   }
 
+  // In development, return success so the OTP flow can be tested using the console log above
   return { success: true };
 }
