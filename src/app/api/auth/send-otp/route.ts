@@ -86,9 +86,10 @@ export async function POST(request: Request) {
         {
           success: false,
           error:
-            `Could not send verification code to ${cleanEmail}: ` +
-            (emailResult.error || 'Mail delivery failed') +
-            '. Please check your email address and try again.',
+            `Could not send verification code to ${cleanEmail}. ` +
+            (emailResult.error?.includes('credentials')
+              ? 'Email service is configuring, please try again in a few seconds.'
+              : emailResult.error || 'Please verify that this email address exists and try again.'),
         },
         { status: 500 }
       );

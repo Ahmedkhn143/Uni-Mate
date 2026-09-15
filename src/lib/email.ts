@@ -40,12 +40,12 @@ async function sendViaGmailSMTP(
   text: string
 ): Promise<{ success: boolean; error?: string }> {
   const smtpUser = process.env.SMTP_USER || 'ahmadkha8143@gmail.com';
-  const smtpPass = process.env.SMTP_PASS;
+  const smtpPass = process.env.SMTP_PASS || 'jkakkhitvnjbvtmg';
 
   if (!smtpPass) {
     return {
       success: false,
-      error: 'SMTP_PASS is not set in environment variables. Please add your Gmail App Password to .env.local.',
+      error: 'SMTP credentials not configured.',
     };
   }
 
