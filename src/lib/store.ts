@@ -69,17 +69,42 @@ export class UniMateStore {
     return () => this.listeners.delete(listener);
   }
 
+  private static syncToDatabase(table: string, action: 'insert' | 'update' | 'delete', data?: any, id?: string, callback?: (saved: any) => void): void {
+    if (typeof window !== 'undefined') {
+      fetch('/api/data/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table, action, data, id })
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && json.data && callback) {
+            callback(json.data);
+          }
+        })
+        .catch(() => {});
+    }
+  }
+
   private static persistOfflineCache(): void {
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem('unimate_offline_store', JSON.stringify({
         questions: this.questions,
-        pastPapers: this.pastPapers,
-        lostFound: this.lostFound,
+        answers: this.answers,
+        comments: this.comments,
         posts: this.posts,
+        lostFound: this.lostFound,
+        pastPapers: this.pastPapers,
+        scholarships: this.scholarships,
         bookmarks: this.bookmarks,
+        conversations: this.conversations,
+        messages: this.messages,
+        notifications: this.notifications,
+        reports: this.reports,
         departments: this.departments,
         subjects: this.subjects,
+        settings: this.settings,
         timestamp: Date.now()
       }));
     } catch (e) {}
@@ -108,13 +133,21 @@ export class UniMateStore {
         const cached = localStorage.getItem('unimate_offline_store');
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (parsed.questions?.length) this.questions = parsed.questions;
-          if (parsed.pastPapers?.length) this.pastPapers = parsed.pastPapers;
-          if (parsed.lostFound?.length) this.lostFound = parsed.lostFound;
-          if (parsed.posts?.length) this.posts = parsed.posts;
-          if (parsed.bookmarks?.length) this.bookmarks = parsed.bookmarks;
-          if (parsed.departments?.length) this.departments = parsed.departments;
-          if (parsed.subjects?.length) this.subjects = parsed.subjects;
+          if (Array.isArray(parsed.questions) && parsed.questions.length) this.questions = parsed.questions;
+          if (Array.isArray(parsed.answers) && parsed.answers.length) this.answers = parsed.answers;
+          if (Array.isArray(parsed.comments) && parsed.comments.length) this.comments = parsed.comments;
+          if (Array.isArray(parsed.posts) && parsed.posts.length) this.posts = parsed.posts;
+          if (Array.isArray(parsed.lostFound) && parsed.lostFound.length) this.lostFound = parsed.lostFound;
+          if (Array.isArray(parsed.pastPapers) && parsed.pastPapers.length) this.pastPapers = parsed.pastPapers;
+          if (Array.isArray(parsed.scholarships) && parsed.scholarships.length) this.scholarships = parsed.scholarships;
+          if (Array.isArray(parsed.bookmarks) && parsed.bookmarks.length) this.bookmarks = parsed.bookmarks;
+          if (Array.isArray(parsed.conversations) && parsed.conversations.length) this.conversations = parsed.conversations;
+          if (Array.isArray(parsed.messages) && parsed.messages.length) this.messages = parsed.messages;
+          if (Array.isArray(parsed.notifications) && parsed.notifications.length) this.notifications = parsed.notifications;
+          if (Array.isArray(parsed.reports) && parsed.reports.length) this.reports = parsed.reports;
+          if (Array.isArray(parsed.departments) && parsed.departments.length) this.departments = parsed.departments;
+          if (Array.isArray(parsed.subjects) && parsed.subjects.length) this.subjects = parsed.subjects;
+          if (parsed.settings && typeof parsed.settings === 'object') this.settings = { ...this.settings, ...parsed.settings };
         }
         const cachedProfiles = localStorage.getItem('unimate_cached_profiles');
         if (cachedProfiles) {
@@ -183,21 +216,22 @@ export class UniMateStore {
         }));
       }
 
-      // 4. Fetch Profiles
+      // 4. Fetch Profiles (select directly to avoid broken join in schema cache)
       const { data: dbProfiles } = await supabase
         .from('profiles')
-        .select('*, departments(name)')
+        .select('*')
         .order('created_at', { ascending: false });
       if (dbProfiles) {
         const merged = [...INITIAL_PROFILES];
         dbProfiles.forEach((p: any) => {
+          const deptName = this.departments.find((d) => d.id === p.department_id)?.name || p.department_name;
           const mapped: Profile = {
             id: p.id,
             email: p.email,
             full_name: p.full_name || p.email.split('@')[0],
             role: p.role || 'student',
             department_id: p.department_id,
-            department_name: p.departments?.name,
+            department_name: deptName,
             program: p.program || 'Degree Student',
             semester: p.semester ? Number(p.semester) : undefined,
             avatar_url: p.avatar_url,
@@ -227,8 +261,8 @@ export class UniMateStore {
         .from('questions')
         .select('*, profiles:author_id(full_name, avatar_url, department_id), departments(name), subjects(name), answers(count)')
         .order('created_at', { ascending: false });
-      if (dbQuestions) {
-        this.questions = dbQuestions.map((q: any) => ({
+      if (dbQuestions && dbQuestions.length > 0) {
+        const mapped = dbQuestions.map((q: any) => ({
           id: q.id,
           author_id: q.author_id,
           author_name: q.profiles?.full_name || 'Student',
@@ -250,6 +284,10 @@ export class UniMateStore {
           created_at: q.created_at,
           updated_at: q.updated_at
         }));
+        const localOnly = this.questions.filter((local) => !mapped.some((m: any) => m.id === local.id));
+        this.questions = [...localOnly, ...mapped].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
       }
 
       // 6. Fetch Answers
@@ -257,8 +295,8 @@ export class UniMateStore {
         .from('answers')
         .select('*, profiles:author_id(full_name, avatar_url)')
         .order('created_at', { ascending: true });
-      if (dbAnswers) {
-        this.answers = dbAnswers.map((a: any) => ({
+      if (dbAnswers && dbAnswers.length > 0) {
+        const mapped = dbAnswers.map((a: any) => ({
           id: a.id,
           question_id: a.question_id,
           author_id: a.author_id,
@@ -271,6 +309,8 @@ export class UniMateStore {
           comments: [],
           created_at: a.created_at
         }));
+        const localOnly = this.answers.filter((local) => !mapped.some((m: any) => m.id === local.id));
+        this.answers = [...localOnly, ...mapped];
       }
 
       // 7. Fetch Comments
@@ -278,8 +318,8 @@ export class UniMateStore {
         .from('comments')
         .select('*, profiles:author_id(full_name, avatar_url)')
         .order('created_at', { ascending: true });
-      if (dbComments) {
-        this.comments = dbComments.map((c: any) => ({
+      if (dbComments && dbComments.length > 0) {
+        const mapped = dbComments.map((c: any) => ({
           id: c.id,
           parent_type: c.parent_type,
           parent_id: c.parent_id,
@@ -289,6 +329,8 @@ export class UniMateStore {
           content: c.content,
           created_at: c.created_at
         }));
+        const localOnly = this.comments.filter((local) => !mapped.some((m: any) => m.id === local.id));
+        this.comments = [...localOnly, ...mapped];
 
         // Link comments to answers
         this.answers.forEach((ans) => {
@@ -302,8 +344,8 @@ export class UniMateStore {
         .select('*, profiles:author_id(full_name, avatar_url, role)')
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
-      if (dbPosts) {
-        this.posts = dbPosts.map((p: any) => ({
+      if (dbPosts && dbPosts.length > 0) {
+        const mapped = dbPosts.map((p: any) => ({
           id: p.id,
           author_id: p.author_id,
           author_name: p.profiles?.full_name || 'Student',
@@ -318,8 +360,13 @@ export class UniMateStore {
           comments_count: this.comments.filter((c) => c.parent_type === 'post' && c.parent_id === p.id).length,
           comments: this.comments.filter((c) => c.parent_type === 'post' && c.parent_id === p.id),
           is_pinned: p.is_pinned || false,
+          status: p.status || 'approved',
           created_at: p.created_at
         }));
+        const localOnly = this.posts.filter((local) => !mapped.some((m: any) => m.id === local.id));
+        this.posts = [...localOnly, ...mapped].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
       }
 
       // 9. Fetch Lost & Found Items
@@ -327,8 +374,8 @@ export class UniMateStore {
         .from('lost_found_items')
         .select('*, profiles:author_id(full_name, avatar_url, email)')
         .order('created_at', { ascending: false });
-      if (dbLostFound) {
-        this.lostFound = dbLostFound.map((i: any) => ({
+      if (dbLostFound && dbLostFound.length > 0) {
+        const mapped = dbLostFound.map((i: any) => ({
           id: i.id,
           author_id: i.author_id,
           author_name: i.profiles?.full_name || 'Student',
@@ -347,6 +394,10 @@ export class UniMateStore {
           resolved_date: i.resolved_date,
           created_at: i.created_at
         }));
+        const localOnly = this.lostFound.filter((local) => !mapped.some((m: any) => m.id === local.id));
+        this.lostFound = [...localOnly, ...mapped].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
       }
 
       // 10. Fetch Past Papers
@@ -354,8 +405,8 @@ export class UniMateStore {
         .from('past_papers')
         .select('*, profiles:uploader_id(full_name), departments(name), subjects(name, code), semesters(number)')
         .order('created_at', { ascending: false });
-      if (dbPastPapers) {
-        this.pastPapers = dbPastPapers.map((p: any) => ({
+      if (dbPastPapers && dbPastPapers.length > 0) {
+        const mapped = dbPastPapers.map((p: any) => ({
           id: p.id,
           uploader_id: p.uploader_id,
           uploader_name: p.profiles?.full_name || 'Campus Student',
@@ -375,6 +426,10 @@ export class UniMateStore {
           status: p.status || 'pending',
           created_at: p.created_at
         }));
+        const localOnly = this.pastPapers.filter((local) => !mapped.some((m: any) => m.id === local.id));
+        this.pastPapers = [...localOnly, ...mapped].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
       }
 
       // 11. Fetch Scholarships
@@ -382,7 +437,7 @@ export class UniMateStore {
         .from('scholarships')
         .select('*')
         .order('deadline', { ascending: true });
-      if (dbScholarships) {
+      if (dbScholarships && dbScholarships.length > 0) {
         this.scholarships = dbScholarships as Scholarship[];
       }
 
@@ -391,7 +446,7 @@ export class UniMateStore {
         .from('bookmarks')
         .select('*')
         .order('created_at', { ascending: false });
-      if (dbBookmarks) {
+      if (dbBookmarks && dbBookmarks.length > 0) {
         this.bookmarks = dbBookmarks as Bookmark[];
       }
 
@@ -400,8 +455,9 @@ export class UniMateStore {
         .from('notifications')
         .select('*')
         .order('created_at', { ascending: false });
-      if (dbNotifications) {
-        this.notifications = dbNotifications as Notification[];
+      if (dbNotifications && dbNotifications.length > 0) {
+        const localOnly = this.notifications.filter((local) => !(dbNotifications as any[]).some((m: any) => m.id === local.id));
+        this.notifications = [...localOnly, ...(dbNotifications as Notification[])];
       }
 
       // 14. Fetch Reports
@@ -409,8 +465,8 @@ export class UniMateStore {
         .from('reports')
         .select('*, profiles:reporter_id(full_name)')
         .order('created_at', { ascending: false });
-      if (dbReports) {
-        this.reports = dbReports.map((r: any) => ({
+      if (dbReports && dbReports.length > 0) {
+        const mapped = dbReports.map((r: any) => ({
           id: r.id,
           reporter_id: r.reporter_id,
           reporter_name: r.profiles?.full_name || 'Student Reporter',
@@ -424,6 +480,8 @@ export class UniMateStore {
           created_at: r.created_at,
           resolved_at: r.resolved_at
         }));
+        const localOnly = this.reports.filter((local) => !mapped.some((m: any) => m.id === local.id));
+        this.reports = [...localOnly, ...mapped];
       }
 
       // 15. Fetch Conversations & Messages
@@ -518,27 +576,29 @@ export class UniMateStore {
     if (!supabase) return this.profiles;
 
     try {
+      // 1. Direct Supabase query
       const { data: dbProfiles } = await supabase
         .from('profiles')
-        .select('*, departments(name)')
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (dbProfiles && dbProfiles.length > 0) {
-        const merged = [...this.profiles];
-        INITIAL_PROFILES.forEach((initP) => {
-          if (!merged.some((m) => m.email.toLowerCase() === initP.email.toLowerCase())) {
-            merged.push(initP);
-          }
-        });
+      const merged = [...this.profiles];
+      INITIAL_PROFILES.forEach((initP) => {
+        if (!merged.some((m) => m.email.toLowerCase() === initP.email.toLowerCase())) {
+          merged.push(initP);
+        }
+      });
 
+      if (dbProfiles && dbProfiles.length > 0) {
         dbProfiles.forEach((p: any) => {
+          const deptName = this.departments.find((d) => d.id === p.department_id)?.name || p.department_name;
           const mapped: Profile = {
             id: p.id,
             email: p.email,
             full_name: p.full_name || p.email.split('@')[0],
             role: p.role || 'student',
             department_id: p.department_id,
-            department_name: p.departments?.name,
+            department_name: deptName,
             program: p.program || 'Degree Student',
             semester: p.semester ? Number(p.semester) : undefined,
             avatar_url: p.avatar_url,
@@ -559,11 +619,54 @@ export class UniMateStore {
             merged.push(mapped);
           }
         });
-
-        this.profiles = merged;
-        this.persistProfiles();
-        this.notify();
       }
+
+      // 2. Also fetch from backend service-role route to cross-reference auth users
+      if (typeof window !== 'undefined') {
+        try {
+          const apiRes = await fetch('/api/admin/users');
+          if (apiRes.ok) {
+            const apiData = await apiRes.json();
+            if (apiData.success && Array.isArray(apiData.users) && apiData.users.length > 0) {
+              apiData.users.forEach((u: any) => {
+                const deptName = this.departments.find((d) => d.id === u.department_id)?.name || u.department_name;
+                const mapped: Profile = {
+                  id: u.id,
+                  email: u.email,
+                  full_name: u.full_name || u.email.split('@')[0],
+                  role: u.role || 'student',
+                  department_id: u.department_id,
+                  department_name: deptName,
+                  program: u.program || 'Degree Student',
+                  semester: u.semester ? Number(u.semester) : undefined,
+                  avatar_url: u.avatar_url,
+                  bio: u.bio,
+                  student_id: u.student_id,
+                  reg_no: u.reg_no || undefined,
+                  is_anonymous: u.is_anonymous || false,
+                  is_suspended: u.is_suspended || false,
+                  created_at: u.created_at,
+                  updated_at: u.updated_at
+                };
+                const idx = merged.findIndex(
+                  (m) => m.id === mapped.id || m.email.toLowerCase() === mapped.email.toLowerCase()
+                );
+                if (idx >= 0) {
+                  merged[idx] = { ...merged[idx], ...mapped };
+                } else {
+                  merged.push(mapped);
+                }
+              });
+            }
+          }
+        } catch (apiErr) {
+          // Non-blocking
+        }
+      }
+
+      this.profiles = merged;
+      this.persistProfiles();
+      this.notify();
     } catch (err) {
       console.warn('Profile sync warning:', err);
     }
@@ -588,11 +691,26 @@ export class UniMateStore {
     this.persistProfiles();
     this.notify();
 
-    const supabase = createClient();
-    if (supabase) {
-      supabase.from('profiles').upsert(profile).then(({ error }) => {
-        if (error) console.error('Error saving profile in Supabase:', error);
-      });
+    // Persist via backend API with service-role to avoid client RLS or non-UUID syntax failure
+    if (typeof window !== 'undefined') {
+      fetch('/api/user/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: profile.id,
+          email: profile.email,
+          updates: {
+            full_name: profile.full_name,
+            program: profile.program,
+            semester: profile.semester,
+            reg_no: profile.reg_no,
+            bio: profile.bio,
+            avatar_url: profile.avatar_url,
+            is_anonymous: profile.is_anonymous,
+            department_id: profile.department_id
+          }
+        })
+      }).catch((e) => console.warn('Profile backend sync error:', e));
     }
   }
 
@@ -785,7 +903,37 @@ export class UniMateStore {
           newQ.id = created.id;
           this.notify();
         }
-        if (error) console.error('Error inserting question into Supabase:', error);
+        if (error) {
+          this.syncToDatabase('questions', 'insert', {
+            author_id: data.author.id,
+            department_id: data.department_id,
+            subject_id: data.subject_id || null,
+            title: data.title,
+            description: data.description,
+            tags: data.tags,
+            image_url: data.image_url || null
+          }, undefined, (saved) => {
+            if (saved?.id) {
+              newQ.id = saved.id;
+              this.notify();
+            }
+          });
+        }
+      });
+    } else {
+      this.syncToDatabase('questions', 'insert', {
+        author_id: data.author.id,
+        department_id: data.department_id,
+        subject_id: data.subject_id || null,
+        title: data.title,
+        description: data.description,
+        tags: data.tags,
+        image_url: data.image_url || null
+      }, undefined, (saved) => {
+        if (saved?.id) {
+          newQ.id = saved.id;
+          this.notify();
+        }
       });
     }
     return newQ;
@@ -871,7 +1019,31 @@ export class UniMateStore {
           newAnswer.id = created.id;
           this.notify();
         }
-        if (error) console.error('Error inserting answer into Supabase:', error);
+        if (error) {
+          this.syncToDatabase('answers', 'insert', {
+            question_id: data.question_id,
+            author_id: data.author.id,
+            content: data.content,
+            image_url: data.image_url || null
+          }, undefined, (saved) => {
+            if (saved?.id) {
+              newAnswer.id = saved.id;
+              this.notify();
+            }
+          });
+        }
+      });
+    } else {
+      this.syncToDatabase('answers', 'insert', {
+        question_id: data.question_id,
+        author_id: data.author.id,
+        content: data.content,
+        image_url: data.image_url || null
+      }, undefined, (saved) => {
+        if (saved?.id) {
+          newAnswer.id = saved.id;
+          this.notify();
+        }
       });
     }
     return newAnswer;
@@ -970,7 +1142,31 @@ export class UniMateStore {
           newComment.id = created.id;
           this.notify();
         }
-        if (error) console.error('Error inserting comment into Supabase:', error);
+        if (error) {
+          this.syncToDatabase('comments', 'insert', {
+            parent_type: data.parent_type,
+            parent_id: data.parent_id,
+            author_id: data.author.id,
+            content: data.content
+          }, undefined, (saved) => {
+            if (saved?.id) {
+              newComment.id = saved.id;
+              this.notify();
+            }
+          });
+        }
+      });
+    } else {
+      this.syncToDatabase('comments', 'insert', {
+        parent_type: data.parent_type,
+        parent_id: data.parent_id,
+        author_id: data.author.id,
+        content: data.content
+      }, undefined, (saved) => {
+        if (saved?.id) {
+          newComment.id = saved.id;
+          this.notify();
+        }
       });
     }
     return newComment;
@@ -1070,7 +1266,37 @@ export class UniMateStore {
           newPost.id = created.id;
           this.notify();
         }
-        if (error) console.error('Error inserting post into Supabase:', error);
+        if (error) {
+          this.syncToDatabase('posts', 'insert', {
+            author_id: data.author.id,
+            category: data.category,
+            title: data.title,
+            content: data.content,
+            image_url: data.image_url || null,
+            tags: data.tags,
+            status: newPost.status
+          }, undefined, (saved) => {
+            if (saved?.id) {
+              newPost.id = saved.id;
+              this.notify();
+            }
+          });
+        }
+      });
+    } else {
+      this.syncToDatabase('posts', 'insert', {
+        author_id: data.author.id,
+        category: data.category,
+        title: data.title,
+        content: data.content,
+        image_url: data.image_url || null,
+        tags: data.tags,
+        status: newPost.status
+      }, undefined, (saved) => {
+        if (saved?.id) {
+          newPost.id = saved.id;
+          this.notify();
+        }
       });
     }
     return newPost;
@@ -1154,7 +1380,45 @@ export class UniMateStore {
           newItem.id = created.id;
           this.notify();
         }
-        if (error) console.error('Error creating lost/found item in Supabase:', error);
+        if (error) {
+          this.syncToDatabase('lost_found_items', 'insert', {
+            author_id: data.author.id,
+            type: data.type,
+            category: data.category,
+            title: data.title,
+            description: data.description,
+            location: data.location,
+            event_date: data.event_date,
+            contact_info: data.contact_info,
+            contact_preference: data.contact_preference,
+            image_url: data.image_url || null,
+            status: 'open'
+          }, undefined, (saved) => {
+            if (saved?.id) {
+              newItem.id = saved.id;
+              this.notify();
+            }
+          });
+        }
+      });
+    } else {
+      this.syncToDatabase('lost_found_items', 'insert', {
+        author_id: data.author.id,
+        type: data.type,
+        category: data.category,
+        title: data.title,
+        description: data.description,
+        location: data.location,
+        event_date: data.event_date,
+        contact_info: data.contact_info,
+        contact_preference: data.contact_preference,
+        image_url: data.image_url || null,
+        status: 'open'
+      }, undefined, (saved) => {
+        if (saved?.id) {
+          newItem.id = saved.id;
+          this.notify();
+        }
       });
     }
     return newItem;
@@ -1251,7 +1515,43 @@ export class UniMateStore {
           newPaper.id = created.id;
           this.notify();
         }
-        if (error) console.error('Error uploading past paper to Supabase:', error);
+        if (error) {
+          this.syncToDatabase('past_papers', 'insert', {
+            uploader_id: data.uploader.id,
+            department_id: data.department_id,
+            subject_id: data.subject_id,
+            year: data.year,
+            exam_type: data.exam_type,
+            title: data.title,
+            file_url: newPaper.file_url,
+            file_name: data.file_name,
+            file_size_kb: data.file_size_kb,
+            status: newPaper.status
+          }, undefined, (saved) => {
+            if (saved?.id) {
+              newPaper.id = saved.id;
+              this.notify();
+            }
+          });
+        }
+      });
+    } else {
+      this.syncToDatabase('past_papers', 'insert', {
+        uploader_id: data.uploader.id,
+        department_id: data.department_id,
+        subject_id: data.subject_id,
+        year: data.year,
+        exam_type: data.exam_type,
+        title: data.title,
+        file_url: newPaper.file_url,
+        file_name: data.file_name,
+        file_size_kb: data.file_size_kb,
+        status: newPaper.status
+      }, undefined, (saved) => {
+        if (saved?.id) {
+          newPaper.id = saved.id;
+          this.notify();
+        }
       });
     }
     return newPaper;

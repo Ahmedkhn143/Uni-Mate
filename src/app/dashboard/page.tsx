@@ -34,7 +34,8 @@ import {
   Layers,
   Hash,
   Lock,
-  Globe
+  Globe,
+  Calculator
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -120,9 +121,7 @@ export default function DashboardPage() {
       router.push('/login');
       return;
     }
-    if (user.role === 'admin') {
-      router.push('/admin');
-    }
+    // Admins can access dashboard for profile editing — no redirect
   }, [user, isLoading, router]);
   
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -436,7 +435,18 @@ export default function DashboardPage() {
             Quick Actions
           </h2>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+          <Link
+            href="/cgpa-calculator"
+            className="flex flex-col items-center text-center p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-500/30 hover:border-emerald-500 hover:shadow-md transition group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+              <Calculator className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">CGPA Calc</span>
+            <span className="text-[10px] text-emerald-500 mt-0.5">KFUEIT Scale</span>
+          </Link>
+
           <Link
             href="/questions/ask"
             className="flex flex-col items-center text-center p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-indigo-500/50 hover:shadow-md transition group"
@@ -717,6 +727,44 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* KFUEIT CGPA Calculator Widget */}
+          <div className="p-5 rounded-3xl bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/30 space-y-4 shadow-sm relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calculator className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                  CGPA Calculator
+                </h3>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                KFUEIT Scale
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-300">
+              Calculate semester SGPA, cumulative CGPA, and grade point conversions based on university grading criteria.
+            </p>
+
+            <div className="pt-1 flex items-center gap-2">
+              <Link
+                href="/cgpa-calculator"
+                className="flex-1 text-center py-2.5 px-4 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition shadow-md shadow-emerald-900/30 flex items-center justify-center gap-1.5"
+              >
+                <span>Launch Calculator</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <a
+                href="https://ahmedkhn143.github.io/KFUEIT_CGPA_Calculator/"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open directly in new tab"
+                className="p-2.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 transition"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </div>
           </div>
 

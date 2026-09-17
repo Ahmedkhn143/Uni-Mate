@@ -14,7 +14,9 @@ import {
   ShieldCheck,
   AlertTriangle,
   Radio,
-  X
+  X,
+  Layers,
+  Calculator
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
@@ -105,15 +107,15 @@ export function MobileNav() {
           </Link>
 
           <Link
-            href="/admin/reports"
+            href="/community"
             className={`flex flex-col items-center gap-1 p-1.5 text-[10px] font-bold transition ${
-              pathname.startsWith('/admin/reports')
-                ? 'text-red-400'
+              pathname.startsWith('/community')
+                ? 'text-emerald-400'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <AlertTriangle className="w-5 h-5" />
-            <span>Moderation</span>
+            <Layers className="w-5 h-5" />
+            <span>All Posts</span>
           </Link>
 
           {/* Center Trigger */}
@@ -125,15 +127,15 @@ export function MobileNav() {
           </button>
 
           <Link
-            href="/admin/past-papers"
+            href="/admin/reports"
             className={`flex flex-col items-center gap-1 p-1.5 text-[10px] font-bold transition ${
-              pathname.startsWith('/admin/past-papers')
-                ? 'text-purple-400'
+              pathname.startsWith('/admin/reports')
+                ? 'text-red-400'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <FileText className="w-5 h-5" />
-            <span>Papers</span>
+            <AlertTriangle className="w-5 h-5" />
+            <span>Mod Queue</span>
           </Link>
 
           <Link
@@ -208,6 +210,18 @@ export function MobileNav() {
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">Study groups, announcements & tips</p>
                 </div>
               </Link>
+
+              <Link
+                href="/cgpa-calculator"
+                onClick={() => setSheetOpen(false)}
+                className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100 transition border border-emerald-500/20"
+              >
+                <Calculator className="w-5 h-5 text-emerald-600" />
+                <div>
+                  <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">KFUEIT CGPA Calculator</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Calculate semester SGPA, CGPA & scale grades</p>
+                </div>
+              </Link>
             </div>
           </div>
         </div>
@@ -229,15 +243,15 @@ export function MobileNav() {
         </Link>
 
         <Link
-          href="/questions"
+          href="/community"
           className={`flex flex-col items-center gap-1 p-1.5 text-[10px] font-semibold transition ${
-            pathname.startsWith('/questions')
-              ? 'text-indigo-600 dark:text-indigo-400'
+            pathname.startsWith('/community')
+              ? 'text-emerald-600 dark:text-emerald-400'
               : 'text-slate-500 dark:text-slate-400'
           }`}
         >
-          <HelpCircle className="w-5 h-5" />
-          <span>Q&A</span>
+          <Layers className="w-5 h-5" />
+          <span>All Posts</span>
         </Link>
 
         {/* Center Quick Action Trigger */}
@@ -249,15 +263,15 @@ export function MobileNav() {
         </button>
 
         <Link
-          href="/past-papers"
+          href="/questions"
           className={`flex flex-col items-center gap-1 p-1.5 text-[10px] font-semibold transition ${
-            pathname.startsWith('/past-papers')
+            pathname.startsWith('/questions')
               ? 'text-indigo-600 dark:text-indigo-400'
               : 'text-slate-500 dark:text-slate-400'
           }`}
         >
-          <FileText className="w-5 h-5" />
-          <span>Papers</span>
+          <HelpCircle className="w-5 h-5" />
+          <span>Q&A</span>
         </Link>
 
         <Link

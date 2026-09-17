@@ -194,8 +194,86 @@ export const INITIAL_SUBJECTS: Subject[] = [
 export const INITIAL_QUESTIONS: Question[] = [];
 export const INITIAL_ANSWERS: Answer[] = [];
 
-// Seeded pending post awaiting admin moderation
+// Initial community posts with approved posts & pending moderation items
 export const INITIAL_POSTS: Post[] = [
+  {
+    id: 'post-announcement-official-1',
+    author_id: 'admin-ahmad-khan-2026',
+    author_name: 'Ahmad Khan (Campus Dean & Admin)',
+    author_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    author_role: 'admin',
+    category: 'announcement',
+    title: '📢 KFUEIT Midterm Examination Schedule & Guidelines Released',
+    content: 'All departmental heads and enrolled students are hereby informed that Spring 2026 Midterm Examinations will commence from next Monday. Please review your respective department notice boards and ensure your university roll number slips are signed.\n\nBest of luck to all students in their academic preparations!',
+    tags: ['KFUEIT', 'Exams', 'Spring2026', 'OfficialNotice'],
+    likes: 18,
+    comments_count: 2,
+    comments: [
+      {
+        id: 'c-admin-1',
+        parent_type: 'post',
+        parent_id: 'post-announcement-official-1',
+        author_id: 'sample-student-1',
+        author_name: 'Muhammad Ehtsham Ali',
+        content: 'Thank you for the official update sir!',
+        created_at: new Date(Date.now() - 3600000).toISOString()
+      },
+      {
+        id: 'c-admin-2',
+        parent_type: 'post',
+        parent_id: 'post-announcement-official-1',
+        author_id: 'sample-student-2',
+        author_name: 'AhmadKhan',
+        content: 'Will past papers for 4th semester be uploaded here in the Past Papers section as well?',
+        created_at: new Date(Date.now() - 1800000).toISOString()
+      }
+    ],
+    is_pinned: true,
+    status: 'approved',
+    created_at: new Date(Date.now() - 86400000).toISOString()
+  },
+  {
+    id: 'post-study-help-1',
+    author_id: 'student-cs-nadeem',
+    author_name: 'Nadeem (Roll # COSC-241103114)',
+    author_avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+    author_role: 'student',
+    category: 'study_help',
+    title: 'Study Group for Object Oriented Programming (CS-102) Midterm Prep',
+    content: 'Hey everyone! We are organizing an interactive evening peer study circle in the Central Library Discussion Room to solve previous 3 years midterm questions for CS-102. Anyone from Semester 2 is welcome to join.',
+    tags: ['CS102', 'OOP', 'StudyGroup', 'Library'],
+    likes: 9,
+    comments_count: 1,
+    comments: [
+      {
+        id: 'c-sh-1',
+        parent_type: 'post',
+        parent_id: 'post-study-help-1',
+        author_id: 'sample-student-2',
+        author_name: 'Usman Ali',
+        content: 'Count me in! I will bring the handouts.',
+        created_at: new Date(Date.now() - 7200000).toISOString()
+      }
+    ],
+    status: 'approved',
+    created_at: new Date(Date.now() - 43200000).toISOString()
+  },
+  {
+    id: 'post-discussion-1',
+    author_id: 'student-ehtsham-18',
+    author_name: 'Muhammad Ehtsham Ali',
+    author_avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
+    author_role: 'student',
+    category: 'discussion',
+    title: 'Recommended Laptops and Linux Setup for AI & Data Science Students',
+    content: 'For juniors asking about which laptop configurations are best for Python, TensorFlow, and dual-booting Ubuntu: 16GB RAM is highly recommended. Feel free to share your setups and tips below!',
+    tags: ['TechAdvice', 'DataScience', 'Ubuntu', 'Laptops'],
+    likes: 12,
+    comments_count: 0,
+    comments: [],
+    status: 'approved',
+    created_at: new Date(Date.now() - 21600000).toISOString()
+  },
   {
     id: 'post-pending-demo-1',
     author_id: 'student-usman-84',
@@ -206,7 +284,7 @@ export const INITIAL_POSTS: Post[] = [
     title: 'Hand-Written Complete Notes & Solved Papers for Data Structures (CS-201)',
     content: 'Assalam-o-Alaikum peers, I have compiled high-quality lecture notes, diagrams, and solved midterm questions for Data Structures & Algorithms (CS-201). Requesting the campus administrator to review and approve so all students can benefit!',
     tags: ['CS201', 'DataStructures', 'MidtermPrep', 'Notes'],
-    likes: 0,
+    likes: 4,
     comments_count: 0,
     status: 'pending',
     created_at: new Date(Date.now() - 3600000).toISOString()

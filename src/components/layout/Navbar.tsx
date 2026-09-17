@@ -22,7 +22,9 @@ import {
   Sun,
   Moon,
   Smartphone,
-  WifiOff
+  WifiOff,
+  Layers,
+  Calculator
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -98,6 +100,13 @@ export function Navbar() {
                 Features
               </Link>
               <Link
+                href={user ? "/community" : "/login"}
+                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center gap-1.5"
+              >
+                <Layers className="w-4 h-4 text-emerald-500" />
+                <span>All Posts</span>
+              </Link>
+              <Link
                 href={user ? "/questions" : "/login"}
                 className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
               >
@@ -120,6 +129,13 @@ export function Navbar() {
                 className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
               >
                 Scholarships
+              </Link>
+              <Link
+                href="/cgpa-calculator"
+                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center gap-1"
+              >
+                <Calculator className="w-3.5 h-3.5 text-emerald-500" />
+                <span>CGPA Calc</span>
               </Link>
             </nav>
 
@@ -203,6 +219,14 @@ export function Navbar() {
                 Features
               </Link>
               <Link
+                href={user ? "/community" : "/login"}
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+              >
+                <Layers className="w-4 h-4 text-emerald-500" />
+                <span>All Posts (Campus Feed)</span>
+              </Link>
+              <Link
                 href={user ? "/questions" : "/login"}
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -229,6 +253,14 @@ export function Navbar() {
                 className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 Scholarships
+              </Link>
+              <Link
+                href="/cgpa-calculator"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+              >
+                <Calculator className="w-4 h-4 text-emerald-500" />
+                <span>CGPA Calculator</span>
               </Link>
             </div>
 
@@ -334,6 +366,14 @@ export function Navbar() {
                 {isAdmin ? (
                   <div className="hidden lg:flex items-center gap-1.5">
                     <Link
+                      href="/community"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 rounded-lg border border-emerald-200 dark:border-emerald-900 transition"
+                      title="View all community posts"
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      All Posts
+                    </Link>
+                    <Link
                       href="/admin/reports"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 hover:bg-red-100 rounded-lg border border-red-200 dark:border-red-900 transition"
                     >
@@ -350,6 +390,21 @@ export function Navbar() {
                   </div>
                 ) : (
                   <div className="hidden lg:flex items-center gap-1.5">
+                    <Link
+                      href="/community"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 rounded-lg border border-emerald-200/60 dark:border-emerald-800 transition"
+                    >
+                      <Layers className="w-3.5 h-3.5 text-emerald-600" />
+                      All Posts
+                    </Link>
+                    <Link
+                      href="/cgpa-calculator"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 rounded-lg border border-sky-200/60 dark:border-sky-800 transition"
+                      title="KFUEIT CGPA Calculator"
+                    >
+                      <Calculator className="w-3.5 h-3.5 text-sky-500" />
+                      CGPA Calc
+                    </Link>
                     <Link
                       href="/questions/ask"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-lg border border-indigo-200/60 dark:border-indigo-800 transition"
@@ -498,6 +553,22 @@ export function Navbar() {
                               {isAdmin ? 'Admin Command Center' : 'Moderator Console'}
                             </Link>
                             <Link
+                              href="/profile"
+                              onClick={() => setUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
+                            >
+                              <User className="w-4 h-4 text-amber-500" />
+                              Dean Profile & Photo
+                            </Link>
+                            <Link
+                              href="/community"
+                              onClick={() => setUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
+                            >
+                              <Layers className="w-4 h-4 text-emerald-500" />
+                              All Posts & Feeds
+                            </Link>
+                            <Link
                               href="/admin/reports"
                               onClick={() => setUserDropdownOpen(false)}
                               className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
@@ -525,6 +596,14 @@ export function Navbar() {
                               Student Dashboard
                             </Link>
                             <Link
+                              href="/community"
+                              onClick={() => setUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
+                            >
+                              <Layers className="w-4 h-4 text-emerald-500" />
+                              All Posts (Campus Feed)
+                            </Link>
+                            <Link
                               href="/profile"
                               onClick={() => setUserDropdownOpen(false)}
                               className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
@@ -539,6 +618,14 @@ export function Navbar() {
                             >
                               <Bookmark className="w-4 h-4 text-slate-400" />
                               Saved Bookmarks
+                            </Link>
+                            <Link
+                              href="/cgpa-calculator"
+                              onClick={() => setUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition"
+                            >
+                              <Calculator className="w-4 h-4 text-emerald-500" />
+                              CGPA Calculator
                             </Link>
                           </>
                         )}

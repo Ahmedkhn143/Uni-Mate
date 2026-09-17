@@ -1,6 +1,78 @@
 import { NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 
+export async function GET() {
+  try {
+    const supabase = createServiceRoleClient();
+    if (!supabase) {
+      return NextResponse.json({ success: false, error: 'Service role client not configured.' }, { status: 500 });
+    }
+
+    // 1. Fetch all profiles from public.profiles
+    const { data: profiles, error: profileErr } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (profileErr) {
+      console.error('[Admin Users API] Error querying profiles:', profileErr.message);
+      return NextResponse.json({ success: false, error: profileErr.message }, { status: 500 });
+    }
+
+    // 2. Fetch all auth users to ensure no registered student is missed
+    const { data: authData, error: authErr } = await supabase.auth.admin.listUsers();
+    
+    const profileMap = new Map<string, any>();
+    (profiles || []).forEach((p) => {
+      profileMap.set(p.email.toLowerCase(), p);
+      profileMap.set(p.id, p);
+    });
+
+    // Cross-reference with auth users
+    if (!authErr && authData?.users) {
+      for (const u of authData.users) {
+        if (!u.email) continue;
+        const lowerEmail = u.email.toLowerCase();
+        if (!profileMap.has(lowerEmail) && !profileMap.has(u.id)) {
+          const synthesized = {
+            id: u.id,
+            email: u.email,
+            full_name: u.user_metadata?.full_name || u.email.split('@')[0],
+            role: (u.user_metadata?.role as any) || 'student',
+            department_id: null,
+            program: 'Degree Student',
+            semester: 1,
+            student_id: null,
+            reg_no: null,
+            is_anonymous: false,
+            avatar_url: null,
+            bio: null,
+            is_suspended: false,
+            created_at: u.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          // Insert missing profile record asynchronously
+          supabase.from('profiles').upsert(synthesized).then(() => {});
+          profileMap.set(lowerEmail, synthesized);
+        }
+      }
+    }
+
+    // Deduplicate profiles by email
+    const uniqueProfiles = Array.from(new Set(Array.from(profileMap.values()).map(p => p.email.toLowerCase())))
+      .map(email => profileMap.get(email));
+
+    return NextResponse.json({
+      success: true,
+      users: uniqueProfiles,
+      total: uniqueProfiles.length
+    });
+  } catch (err: any) {
+    console.error('[Admin Users API] Error in GET:', err);
+    return NextResponse.json({ success: false, error: err?.message || 'Failed to fetch users' }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();

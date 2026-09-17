@@ -436,16 +436,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     UniMateStore.saveProfile(updated);
     setUser(updated);
 
-    const supabase = createClient();
-    if (supabase) {
-      try {
-        await supabase
-          .from('profiles')
-          .update(updates)
-          .eq('id', user.id);
-      } catch (err) {
-        console.error('Failed to sync profile update with Supabase:', err);
-      }
+    try {
+      await fetch('/api/user/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: user.id,
+          email: user.email,
+          updates: {
+            full_name: updated.full_name,
+            program: updated.program,
+            semester: updated.semester,
+            reg_no: updated.reg_no,
+            bio: updated.bio,
+            avatar_url: updated.avatar_url,
+            is_anonymous: updated.is_anonymous,
+            department_id: updated.department_id
+          }
+        })
+      });
+    } catch (err) {
+      console.warn('Failed to sync profile update with server:', err);
     }
   };
 

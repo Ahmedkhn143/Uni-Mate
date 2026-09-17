@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
+  Save,
+  Upload,
+  User,
   ShieldCheck, 
   Users, 
   HelpCircle, 
@@ -43,17 +46,20 @@ import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
 import { Report, PastPaper, Profile, Post } from '@/types/database';
 import { AdminAccessDenied } from '@/components/ui/AdminAccessDenied';
+import { KFUEIT_PROGRAMS } from '@/lib/constants';
 
 export default function AdminDashboardPage() {
-  const { user, isAdmin, isModerator, isModeratorOrAdmin } = useAuth();
+  const { user, isAdmin, isModerator, isModeratorOrAdmin, updateCurrentUserProfile } = useAuth();
   
   const [stats, setStats] = useState<any>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [pendingPapers, setPendingPapers] = useState<PastPaper[]>([]);
   const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [studentSearch, setStudentSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'posts' | 'moderation' | 'papers' | 'students' | 'broadcast'>('posts');
+  const [postsSubTab, setPostsSubTab] = useState<'pending' | 'live' | 'rejected'>('pending');
   const [syncingStudents, setSyncingStudents] = useState(false);
   const [selectedStudentForDossier, setSelectedStudentForDossier] = useState<Profile | null>(null);
   
@@ -61,6 +67,56 @@ export default function AdminDashboardPage() {
   const [broadcastTitle, setBroadcastTitle] = useState('');
   const [broadcastContent, setBroadcastContent] = useState('');
   const [broadcastSuccess, setBroadcastSuccess] = useState(false);
+
+  // Admin Profile Edit Modal State
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [editFullName, setEditFullName] = useState('');
+  const [editProgram, setEditProgram] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editAvatarPreview, setEditAvatarPreview] = useState<string | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSaveMsg, setProfileSaveMsg] = useState('');
+
+  const openProfileEditModal = () => {
+    if (!user) return;
+    setEditFullName(user.full_name || '');
+    setEditProgram(user.program || 'Campus Dean & Platform Administrator');
+    setEditBio(user.bio || '');
+    setEditAvatarPreview(user.avatar_url || null);
+    setProfileSaveMsg('');
+    setProfileModalOpen(true);
+  };
+
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Profile photo must be less than 5MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setEditAvatarPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveAdminProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setSavingProfile(true);
+    await updateCurrentUserProfile({
+      full_name: editFullName.trim() || user.full_name,
+      program: editProgram.trim() || user.program,
+      bio: editBio.trim(),
+      avatar_url: editAvatarPreview || undefined
+    });
+    setSavingProfile(false);
+    setProfileSaveMsg('Profile updated successfully!');
+    showNotice('Admin profile saved.');
+    setTimeout(() => {
+      setProfileModalOpen(false);
+      setProfileSaveMsg('');
+    }, 800);
+  };
 
   // Success message toast
   const [actionNotice, setActionNotice] = useState<string | null>(null);
@@ -75,7 +131,9 @@ export default function AdminDashboardPage() {
       setStats(UniMateStore.getStats());
       setReports(UniMateStore.getReports());
       setPendingPapers(UniMateStore.getPastPapers().filter((p) => p.status === 'pending'));
-      setPendingPosts(UniMateStore.getPosts('admin').filter((p) => p.status === 'pending'));
+      const allAdminPosts = UniMateStore.getPosts('admin');
+      setPendingPosts(allAdminPosts.filter((p) => p.status === 'pending'));
+      setAllPosts(allAdminPosts);
       setProfiles(UniMateStore.getProfiles());
     };
     load();
@@ -189,13 +247,14 @@ export default function AdminDashboardPage() {
                   {user?.full_name?.charAt(0) || 'A'}
                 </div>
               )}
-              <Link
-                href="/dashboard"
+              <button
+                type="button"
+                onClick={openProfileEditModal}
                 className="absolute -bottom-1.5 -right-1.5 p-1.5 rounded-xl bg-amber-400 text-slate-900 shadow-md hover:scale-110 transition cursor-pointer"
-                title="Edit avatar & profile in Dashboard"
+                title="Edit avatar & profile"
               >
                 <Camera className="w-3.5 h-3.5" />
-              </Link>
+              </button>
             </div>
 
             <div className="space-y-2">
@@ -210,13 +269,14 @@ export default function AdminDashboardPage() {
                 Logged in as <strong className="text-amber-300">{user?.full_name || 'Administrator'}</strong> ({user?.program || 'Campus Dean & Platform Administrator'}). Supervise student safety, academic content approvals, account standing, and emergency broadcasts.
               </p>
               <div className="pt-0.5">
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-amber-300 text-xs font-bold transition"
+                <button
+                  type="button"
+                  onClick={openProfileEditModal}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-amber-300 text-xs font-bold transition cursor-pointer"
                 >
                   <Edit3 className="w-3 h-3" />
                   <span>Edit Profile / Avatar Photo</span>
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -321,7 +381,7 @@ export default function AdminDashboardPage() {
             }`}
           >
             <Layers className="w-4 h-4" />
-            <span>Pending Posts</span>
+            <span>Posts Management</span>
             {pendingPosts.length > 0 && (
               <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-black animate-pulse">
                 {pendingPosts.length}
@@ -392,69 +452,218 @@ export default function AdminDashboardPage() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  Student Community Posts — Approval Desk
+                  Community Posts — Full Management Console
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Review student-submitted community posts. Approved posts go live on Campus Feed. Rejected posts are hidden.
+                  Review, approve, reject, and manage all student community posts across the platform.
                 </p>
               </div>
 
-              {pendingPosts.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 text-xs">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                  All community posts are reviewed! No pending submissions.
-                </div>
-              ) : (
-                <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {pendingPosts.map((post) => (
-                    <div key={post.id} className="py-4 flex flex-col md:flex-row md:items-start justify-between gap-4">
-                      <div className="space-y-1.5 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                            {post.title}
-                          </span>
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                            PENDING
-                          </span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                            {post.category}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
-                          {post.content}
-                        </p>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                          <span>By <strong>{post.author_name}</strong></span>
-                          <span>•</span>
-                          <span>{new Date(post.created_at).toLocaleString()}</span>
-                          {post.tags.length > 0 && (
-                            <>
-                              <span>•</span>
-                              <span className="text-indigo-500">#{post.tags.join(' #')}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
+              {/* Posts Sub-tabs */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => setPostsSubTab('pending')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    postsSubTab === 'pending'
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  Pending ({pendingPosts.length})
+                </button>
+                <button
+                  onClick={() => setPostsSubTab('live')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    postsSubTab === 'live'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  All Live Posts ({allPosts.filter(p => p.status === 'approved' || !p.status).length})
+                </button>
+                <button
+                  onClick={() => setPostsSubTab('rejected')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    postsSubTab === 'rejected'
+                      ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 border border-red-300 dark:border-red-700'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  Rejected ({allPosts.filter(p => p.status === 'rejected').length})
+                </button>
+              </div>
 
-                      <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
-                        <button
-                          onClick={() => handlePostStatus(post.id, 'approved')}
-                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          Approve & Publish
-                        </button>
-                        <button
-                          onClick={() => handlePostStatus(post.id, 'rejected')}
-                          className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-600 font-bold text-xs flex items-center gap-1 transition"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                          Reject
-                        </button>
-                      </div>
+              {/* Pending Posts */}
+              {postsSubTab === 'pending' && (
+                <>
+                  {pendingPosts.length === 0 ? (
+                    <div className="py-12 text-center text-slate-400 text-xs">
+                      <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                      All community posts are reviewed! No pending submissions.
                     </div>
-                  ))}
-                </div>
+                  ) : (
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {pendingPosts.map((post) => (
+                        <div key={post.id} className="py-4 flex flex-col md:flex-row md:items-start justify-between gap-4">
+                          <div className="space-y-1.5 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                                {post.title}
+                              </span>
+                              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                PENDING
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                                {post.category}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
+                              {post.content}
+                            </p>
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                              <span>By <strong>{post.author_name}</strong></span>
+                              <span>•</span>
+                              <span>{new Date(post.created_at).toLocaleString()}</span>
+                              {post.tags.length > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-indigo-500">#{post.tags.join(' #')}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                            <button
+                              onClick={() => handlePostStatus(post.id, 'approved')}
+                              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              Approve & Publish
+                            </button>
+                            <button
+                              onClick={() => handlePostStatus(post.id, 'rejected')}
+                              className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-600 font-bold text-xs flex items-center gap-1 transition"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* All Live Posts */}
+              {postsSubTab === 'live' && (
+                <>
+                  {(() => {
+                    const livePosts = allPosts.filter(p => p.status === 'approved' || !p.status);
+                    return livePosts.length === 0 ? (
+                      <div className="py-12 text-center text-slate-400 text-xs">
+                        <Layers className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                        No live posts yet.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {livePosts.map((post) => (
+                          <div key={post.id} className="py-4 flex flex-col md:flex-row md:items-start justify-between gap-4">
+                            <div className="space-y-1.5 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                                  {post.title}
+                                </span>
+                                {post.is_pinned && (
+                                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+                                    📌 PINNED
+                                  </span>
+                                )}
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                                  {post.category}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
+                                {post.content}
+                              </p>
+                              <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                <span>By <strong>{post.author_name}</strong> ({post.author_role})</span>
+                                <span>•</span>
+                                <span>{new Date(post.created_at).toLocaleString()}</span>
+                                <span>•</span>
+                                <span>❤ {post.likes || 0} likes • 💬 {post.comments_count || 0} comments</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                              <button
+                                onClick={() => handlePostStatus(post.id, 'rejected')}
+                                className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-600 font-bold text-xs flex items-center gap-1 transition"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+
+              {/* Rejected Posts */}
+              {postsSubTab === 'rejected' && (
+                <>
+                  {(() => {
+                    const rejectedPosts = allPosts.filter(p => p.status === 'rejected');
+                    return rejectedPosts.length === 0 ? (
+                      <div className="py-12 text-center text-slate-400 text-xs">
+                        <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                        No rejected posts.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {rejectedPosts.map((post) => (
+                          <div key={post.id} className="py-4 flex flex-col md:flex-row md:items-start justify-between gap-4">
+                            <div className="space-y-1.5 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                                  {post.title}
+                                </span>
+                                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300">
+                                  REJECTED
+                                </span>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                                  {post.category}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
+                                {post.content}
+                              </p>
+                              <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                <span>By <strong>{post.author_name}</strong></span>
+                                <span>•</span>
+                                <span>{new Date(post.created_at).toLocaleString()}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                              <button
+                                onClick={() => handlePostStatus(post.id, 'approved')}
+                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                Re-approve
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </>
               )}
             </div>
           )}
@@ -1103,6 +1312,135 @@ export default function AdminDashboardPage() {
                 Done Inspecting
               </button>
             </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* 6. ADMIN PROFILE EDIT MODAL */}
+      {profileModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/60">
+                  <User className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="text-base font-extrabold text-slate-900 dark:text-white">Edit Admin Profile</h2>
+                  <p className="text-[11px] text-slate-500">Update your photo, name, title, and bio</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setProfileModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {profileSaveMsg && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                {profileSaveMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveAdminProfile} className="space-y-4">
+              {/* Avatar Preview & Upload */}
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                  {editAvatarPreview ? (
+                    <img
+                      src={editAvatarPreview}
+                      alt="Preview"
+                      className="w-20 h-20 rounded-2xl object-cover ring-4 ring-amber-400/30 shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-300 font-black text-2xl flex items-center justify-center ring-4 ring-amber-400/30 shadow-lg">
+                      {editFullName?.charAt(0) || user?.full_name?.charAt(0) || 'A'}
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2 flex-1">
+                  <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer transition">
+                    <Upload className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Upload Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfileImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                  <p className="text-[10px] text-slate-400">Max 5MB • JPG, PNG, WebP</p>
+                </div>
+              </div>
+
+              {/* Full Name */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Role Title / Program */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Role / Title
+                </label>
+                <input
+                  type="text"
+                  value={editProgram}
+                  onChange={(e) => setEditProgram(e.target.value)}
+                  placeholder="e.g. Campus Dean & Platform Administrator"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Bio */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Bio / About
+                </label>
+                <textarea
+                  rows={3}
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value)}
+                  placeholder="A short bio about yourself..."
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:outline-none resize-none"
+                />
+              </div>
+
+              {/* Save Button */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setProfileModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-60 shadow-md shadow-amber-600/20 transition flex items-center gap-2"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  {savingProfile ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
 
           </div>
         </div>
