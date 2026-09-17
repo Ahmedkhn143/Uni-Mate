@@ -33,9 +33,23 @@ export default function ProfilePage() {
   const [bio, setBio] = useState(user?.bio || '');
   const [semester, setSemester] = useState(user?.semester || 1);
   const [program, setProgram] = useState(user?.program || '');
-  const [regNo, setRegNo] = useState(user?.reg_no || '');
+  const [regNo, setRegNo] = useState(user?.reg_no || user?.student_id || '');
   const [isAnonymous, setIsAnonymous] = useState(user?.is_anonymous || false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url || null);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
+
+  React.useEffect(() => {
+    if (user) {
+      setFullName(user.full_name || '');
+      setBio(user.bio || '');
+      setSemester(user.semester || 1);
+      setProgram(user.program || '');
+      setRegNo(user.reg_no || user.student_id || '');
+      setIsAnonymous(user.is_anonymous || false);
+      setAvatarPreview(user.avatar_url || null);
+    }
+  }, [user]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,20 +81,29 @@ export default function ProfilePage() {
   const lostFound = UniMateStore.getLostFoundItems().filter((item) => item.author_id === user.id);
   const bookmarks = UniMateStore.getBookmarks(user.id);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
+    setSaveSuccessMsg('');
     const resolvedProg = program.trim() || 'BS Computer Science';
 
-    updateCurrentUserProfile({
+    await updateCurrentUserProfile({
       full_name: fullName.trim(),
       bio: bio.trim(),
       semester: Number(semester),
       program: resolvedProg,
       reg_no: regNo.trim() || undefined,
+      student_id: regNo.trim() || undefined,
       is_anonymous: isAnonymous,
       avatar_url: avatarPreview || undefined
     });
-    setIsEditing(false);
+
+    setSaving(false);
+    setSaveSuccessMsg('Profile updated successfully!');
+    setTimeout(() => {
+      setIsEditing(false);
+      setSaveSuccessMsg('');
+    }, 700);
   };
 
   return (
@@ -304,12 +327,32 @@ export default function ProfilePage() {
               />
             </div>
 
-            <button
-              type="submit"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl"
-            >
-              <Save className="w-3.5 h-3.5" /> Save Changes
-            </button>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={saving}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md transition"
+              >
+                {saving ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Changes</span>
+                  </>
+                )}
+              </button>
+
+              {saveSuccessMsg && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4" />
+                  {saveSuccessMsg}
+                </span>
+              )}
+            </div>
           </form>
         )}
 

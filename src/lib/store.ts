@@ -237,7 +237,7 @@ export class UniMateStore {
             avatar_url: p.avatar_url,
             bio: p.bio,
             student_id: p.student_id,
-            reg_no: p.reg_no || undefined,
+            reg_no: p.student_id || p.reg_no || undefined,
             is_anonymous: p.is_anonymous || false,
             is_suspended: p.is_suspended || false,
             created_at: p.created_at,
@@ -247,7 +247,12 @@ export class UniMateStore {
             (m) => m.id === mapped.id || m.email.toLowerCase() === mapped.email.toLowerCase()
           );
           if (existingIdx >= 0) {
-            merged[existingIdx] = { ...merged[existingIdx], ...mapped };
+            merged[existingIdx] = { 
+              ...merged[existingIdx], 
+              ...mapped,
+              reg_no: mapped.reg_no || merged[existingIdx].reg_no,
+              is_anonymous: merged[existingIdx].is_anonymous ?? false
+            };
           } else {
             merged.push(mapped);
           }
@@ -704,6 +709,7 @@ export class UniMateStore {
             program: profile.program,
             semester: profile.semester,
             reg_no: profile.reg_no,
+            student_id: profile.reg_no || profile.student_id,
             bio: profile.bio,
             avatar_url: profile.avatar_url,
             is_anonymous: profile.is_anonymous,

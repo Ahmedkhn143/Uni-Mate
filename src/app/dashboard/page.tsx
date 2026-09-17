@@ -66,7 +66,7 @@ export default function DashboardPage() {
     setEditFullName(user.full_name || '');
     setEditProgram(user.program || '');
     setEditSemester(user.semester || 1);
-    setEditRegNo(user.reg_no || '');
+    setEditRegNo(user.reg_no || user.student_id || '');
     setEditIsAnonymous(user.is_anonymous || false);
     setEditBio(user.bio || '');
     setEditAvatarPreview(user.avatar_url || null);
@@ -102,6 +102,7 @@ export default function DashboardPage() {
       program: finalProgram,
       semester: Number(editSemester),
       reg_no: editRegNo.trim() || undefined,
+      student_id: editRegNo.trim() || undefined,
       is_anonymous: editIsAnonymous,
       bio: editBio.trim(),
       avatar_url: editAvatarPreview || undefined

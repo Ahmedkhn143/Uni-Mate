@@ -60,16 +60,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      let localUser: Profile | null = null;
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('unimate_active_user');
+        if (saved) {
+          try {
+            localUser = JSON.parse(saved);
+          } catch (e) {}
+        }
+      }
+
+      // Check by UUID or by email
+      let data: any = null;
+      const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+      if (isValidUUID) {
+        const res = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+        data = res.data;
+      }
+      if (!data && email) {
+        const res = await supabase.from('profiles').select('*').eq('email', email.trim().toLowerCase()).maybeSingle();
+        data = res.data;
+      }
 
       if (data) {
-        setUser(data as Profile);
+        const mapped: Profile = {
+          id: data.id || userId,
+          email: data.email || email,
+          full_name: data.full_name || localUser?.full_name || email.split('@')[0],
+          role: data.role || localUser?.role || 'student',
+          department_id: data.department_id || localUser?.department_id,
+          department_name: localUser?.department_name,
+          program: data.program || localUser?.program || 'BS Computer Science',
+          semester: data.semester ? Number(data.semester) : (localUser?.semester || 1),
+          student_id: data.student_id || localUser?.student_id,
+          reg_no: data.student_id || localUser?.reg_no,
+          avatar_url: data.avatar_url || localUser?.avatar_url,
+          bio: data.bio || localUser?.bio || '',
+          is_anonymous: localUser?.is_anonymous ?? false,
+          is_suspended: data.is_suspended || false,
+          created_at: data.created_at || new Date().toISOString(),
+          updated_at: data.updated_at || new Date().toISOString()
+        };
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('unimate_active_user', JSON.stringify(mapped));
+        }
+        UniMateStore.saveProfile(mapped);
+        setUser(mapped);
+      } else if (localUser) {
+        setUser(localUser);
       } else {
-        // Fallback create profile if trigger was delayed
         const fallback: Profile = {
           id: userId,
           email: email.toLowerCase(),
@@ -79,7 +119,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
-        await supabase.from('profiles').upsert(fallback);
         setUser(fallback);
       }
     } catch (err) {
@@ -429,7 +468,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateCurrentUserProfile = async (updates: Partial<Profile>) => {
     if (!user) return;
-    const updated = { ...user, ...updates, updated_at: new Date().toISOString() };
+    const updated: Profile = { 
+      ...user, 
+      ...updates, 
+      student_id: updates.reg_no || updates.student_id || user.student_id,
+      reg_no: updates.reg_no || updates.student_id || user.reg_no,
+      updated_at: new Date().toISOString() 
+    };
+
     if (typeof window !== 'undefined') {
       localStorage.setItem('unimate_active_user', JSON.stringify(updated));
     }
@@ -437,7 +483,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(updated);
 
     try {
-      await fetch('/api/user/profile', {
+      const res = await fetch('/api/user/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -448,6 +494,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             program: updated.program,
             semester: updated.semester,
             reg_no: updated.reg_no,
+            student_id: updated.student_id,
             bio: updated.bio,
             avatar_url: updated.avatar_url,
             is_anonymous: updated.is_anonymous,
@@ -455,6 +502,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         })
       });
+      const data = await res.json();
+      if (data.success && data.profile) {
+        const synced = { ...updated, ...data.profile };
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('unimate_active_user', JSON.stringify(synced));
+        }
+        setUser(synced);
+      }
     } catch (err) {
       console.warn('Failed to sync profile update with server:', err);
     }
