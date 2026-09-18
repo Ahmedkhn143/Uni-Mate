@@ -59,8 +59,8 @@ export default function UploadPastPaperPage() {
     }
 
     const sizeKb = Math.round(file.size / 1024);
-    if (sizeKb > 25 * 1024) {
-      setError('File size exceeds the 25 MB campus limit.');
+    if (sizeKb > 10 * 1024) {
+      setError('Document size exceeds the 10 MB limit. Please select a file up to 10 MB.');
       e.target.value = '';
       return;
     }
@@ -189,7 +189,7 @@ export default function UploadPastPaperPage() {
               {fileName ? fileName : 'Choose PDF document file'}
             </p>
             <p className="text-[11px] text-slate-400 mt-1">
-              PDF only • Maximum file size 25 MB
+              PDF only • Maximum file size 10 MB
             </p>
             <input
               type="file"

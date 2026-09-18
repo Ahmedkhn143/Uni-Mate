@@ -47,6 +47,14 @@ function CreateLostFoundContent() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (file.size > 1 * 1024 * 1024) {
+      setError('Photo size exceeds the maximum limit of 1 MB. Please choose an image under 1 MB or compress it.');
+      e.target.value = '';
+      return;
+    }
+
+    setError('');
     setUploadingImg(true);
     try {
       const formData = new FormData();
@@ -59,9 +67,12 @@ function CreateLostFoundContent() {
       const data = await res.json();
       if (data.success && data.url) {
         setImageUrl(data.url);
+      } else {
+        setError(data.error || 'Failed to upload photo.');
       }
     } catch (err) {
       console.error('Image upload failed', err);
+      setError('An error occurred while uploading photo.');
     } finally {
       setUploadingImg(false);
     }
@@ -305,7 +316,7 @@ function CreateLostFoundContent() {
               <span>{uploadingImg ? 'Uploading to Cloudflare...' : 'Upload Photo'}</span>
               <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImg} className="hidden" />
             </label>
-            <span className="text-[11px] text-slate-400">or enter image link below</span>
+            <span className="text-[11px] text-slate-400">or enter image link below (JPG/PNG • Max 1 MB)</span>
           </div>
           <div className="relative">
             <ImageIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />

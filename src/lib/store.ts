@@ -133,17 +133,25 @@ export class UniMateStore {
         const cached = localStorage.getItem('unimate_offline_store');
         if (cached) {
           const parsed = JSON.parse(cached);
+          const DUMMY_POST_IDS = new Set(['post-announcement-official-1', 'post-study-help-1', 'post-discussion-1', 'post-pending-demo-1']);
+          const DUMMY_PAPER_IDS = new Set(['paper-pending-demo-1']);
+          const DUMMY_NOTIF_IDS = new Set(['notif-admin-post-1', 'notif-admin-paper-1']);
+          const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+          const now = Date.now();
+
           if (Array.isArray(parsed.questions) && parsed.questions.length) this.questions = parsed.questions;
           if (Array.isArray(parsed.answers) && parsed.answers.length) this.answers = parsed.answers;
           if (Array.isArray(parsed.comments) && parsed.comments.length) this.comments = parsed.comments;
-          if (Array.isArray(parsed.posts) && parsed.posts.length) this.posts = parsed.posts;
-          if (Array.isArray(parsed.lostFound) && parsed.lostFound.length) this.lostFound = parsed.lostFound;
-          if (Array.isArray(parsed.pastPapers) && parsed.pastPapers.length) this.pastPapers = parsed.pastPapers;
+          if (Array.isArray(parsed.posts)) this.posts = parsed.posts.filter((p: any) => !DUMMY_POST_IDS.has(p.id));
+          if (Array.isArray(parsed.lostFound)) {
+            this.lostFound = parsed.lostFound.filter((item: any) => (now - new Date(item.created_at).getTime()) <= TWO_WEEKS_MS);
+          }
+          if (Array.isArray(parsed.pastPapers)) this.pastPapers = parsed.pastPapers.filter((p: any) => !DUMMY_PAPER_IDS.has(p.id));
           if (Array.isArray(parsed.scholarships) && parsed.scholarships.length) this.scholarships = parsed.scholarships;
           if (Array.isArray(parsed.bookmarks) && parsed.bookmarks.length) this.bookmarks = parsed.bookmarks;
           if (Array.isArray(parsed.conversations) && parsed.conversations.length) this.conversations = parsed.conversations;
           if (Array.isArray(parsed.messages) && parsed.messages.length) this.messages = parsed.messages;
-          if (Array.isArray(parsed.notifications) && parsed.notifications.length) this.notifications = parsed.notifications;
+          if (Array.isArray(parsed.notifications)) this.notifications = parsed.notifications.filter((n: any) => !DUMMY_NOTIF_IDS.has(n.id));
           if (Array.isArray(parsed.reports) && parsed.reports.length) this.reports = parsed.reports;
           if (Array.isArray(parsed.departments) && parsed.departments.length) this.departments = parsed.departments;
           if (Array.isArray(parsed.subjects) && parsed.subjects.length) this.subjects = parsed.subjects;
@@ -374,10 +382,18 @@ export class UniMateStore {
         );
       }
 
-      // 9. Fetch Lost & Found Items
+      // 9. Fetch Lost & Found Items (Auto-expire items older than 2 weeks / 14 days)
+      const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const cutoffDate = new Date(now - TWO_WEEKS_MS).toISOString();
+
+      // Clean expired items from database asynchronously
+      supabase.from('lost_found_items').delete().lt('created_at', cutoffDate).then(() => {});
+
       const { data: dbLostFound } = await supabase
         .from('lost_found_items')
         .select('*, profiles:author_id(full_name, avatar_url, email)')
+        .gte('created_at', cutoffDate)
         .order('created_at', { ascending: false });
       if (dbLostFound && dbLostFound.length > 0) {
         const mapped = dbLostFound.map((i: any) => ({
@@ -399,7 +415,10 @@ export class UniMateStore {
           resolved_date: i.resolved_date,
           created_at: i.created_at
         }));
-        const localOnly = this.lostFound.filter((local) => !mapped.some((m: any) => m.id === local.id));
+        const localOnly = this.lostFound.filter((local) => 
+          (now - new Date(local.created_at).getTime()) <= TWO_WEEKS_MS &&
+          !mapped.some((m: any) => m.id === local.id)
+        );
         this.lostFound = [...localOnly, ...mapped].sort(
           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
@@ -1339,11 +1358,18 @@ export class UniMateStore {
 
   // --- LOST & FOUND ---
   public static getLostFoundItems(): LostFoundItem[] {
-    return this.lostFound;
+    const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    return this.lostFound.filter((item) => (now - new Date(item.created_at).getTime()) <= TWO_WEEKS_MS);
   }
 
   public static getLostFoundById(id: string): LostFoundItem | undefined {
-    return this.lostFound.find((item) => item.id === id);
+    const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const item = this.lostFound.find((i) => i.id === id);
+    if (!item) return undefined;
+    if ((now - new Date(item.created_at).getTime()) > TWO_WEEKS_MS) return undefined;
+    return item;
   }
 
   public static createLostFoundItem(data: {
@@ -1955,14 +1981,18 @@ export class UniMateStore {
   // --- PLATFORM STATS ---
   public static getStats() {
     const students = this.profiles.filter((p) => p.role === 'student').length;
+    const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const activeLostFound = this.lostFound.filter((i) => (now - new Date(i.created_at).getTime()) <= TWO_WEEKS_MS);
+
     return {
       totalStudents: students > 0 ? students : this.profiles.length,
       totalUsers: this.profiles.length,
       totalModerators: this.profiles.filter((p) => p.role === 'moderator').length,
       activeQuestions: this.questions.length,
       totalAnswers: this.answers.length,
-      lostItems: this.lostFound.filter((i) => i.type === 'lost').length,
-      foundItems: this.lostFound.filter((i) => i.type === 'found').length,
+      lostItems: activeLostFound.filter((i) => i.type === 'lost').length,
+      foundItems: activeLostFound.filter((i) => i.type === 'found').length,
       pastPapersCount: this.pastPapers.filter((p) => p.status === 'approved').length,
       pendingPapers: this.pastPapers.filter((p) => p.status === 'pending').length,
       pendingPosts: this.posts.filter((p) => p.status === 'pending').length,

@@ -294,81 +294,135 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* 2. KEY METRICS CARDS */}
+      {/* 2. KEY METRICS CARDS (CLICKABLE) */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           
-          {/* Total Students */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1">
+          {/* Total Students -> Directory */}
+          <Link
+            href="/admin/users"
+            title="View Student & Faculty Directory"
+            className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1 hover:border-indigo-500/60 hover:shadow-md hover:-translate-y-1 transition cursor-pointer group block"
+          >
             <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400">
-              <Users className="w-5 h-5" />
+              <Users className="w-5 h-5 group-hover:scale-110 transition" />
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600">Active</span>
             </div>
             <div className="text-2xl font-black text-slate-900 dark:text-slate-100">{stats.totalStudents}</div>
-            <div className="text-xs text-slate-500 font-medium">Enrolled Students</div>
-          </div>
+            <div className="text-xs text-slate-500 font-medium group-hover:text-indigo-600 transition flex items-center justify-between">
+              <span>Enrolled Students</span>
+              <span className="text-[10px] text-indigo-500 opacity-0 group-hover:opacity-100 transition">→</span>
+            </div>
+          </Link>
 
-          {/* Pending Reports (Red Alert) */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border-2 border-red-500/40 dark:border-red-500/30 shadow-sm space-y-1">
+          {/* Pending Reports (Red Alert) -> Reports Tab */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('moderation');
+              document.getElementById('admin-control-tabs')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            title="Review Flagged Reports"
+            className="p-5 rounded-3xl bg-white dark:bg-slate-900 border-2 border-red-500/40 dark:border-red-500/30 shadow-sm space-y-1 text-left hover:border-red-500 hover:shadow-md hover:-translate-y-1 transition cursor-pointer w-full group block"
+          >
             <div className="flex items-center justify-between text-red-600">
-              <AlertTriangle className="w-5 h-5" />
+              <AlertTriangle className="w-5 h-5 group-hover:scale-110 transition" />
               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 uppercase animate-pulse">
                 Action Req.
               </span>
             </div>
             <div className="text-2xl font-black text-red-600">{stats.pendingReports}</div>
-            <div className="text-xs text-slate-500 font-medium">Flagged Reports Queue</div>
-          </div>
+            <div className="text-xs text-slate-500 font-medium group-hover:text-red-600 transition flex items-center justify-between">
+              <span>Flagged Reports Queue</span>
+              <span className="text-[10px] text-red-500 opacity-0 group-hover:opacity-100 transition">↓</span>
+            </div>
+          </button>
 
-          {/* Pending Papers (Amber Alert) */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border-2 border-amber-500/40 dark:border-amber-500/30 shadow-sm space-y-1">
+          {/* Pending Papers (Amber Alert) -> Papers Tab */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('papers');
+              document.getElementById('admin-control-tabs')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            title="Review Pending Examination Papers"
+            className="p-5 rounded-3xl bg-white dark:bg-slate-900 border-2 border-amber-500/40 dark:border-amber-500/30 shadow-sm space-y-1 text-left hover:border-amber-500 hover:shadow-md hover:-translate-y-1 transition cursor-pointer w-full group block"
+          >
             <div className="flex items-center justify-between text-amber-600">
-              <FileText className="w-5 h-5" />
+              <FileText className="w-5 h-5 group-hover:scale-110 transition" />
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
                 Review
               </span>
             </div>
             <div className="text-2xl font-black text-amber-600">{stats.pendingPapers}</div>
-            <div className="text-xs text-slate-500 font-medium">Exam Papers Pending</div>
-          </div>
+            <div className="text-xs text-slate-500 font-medium group-hover:text-amber-600 transition flex items-center justify-between">
+              <span>Exam Papers Pending</span>
+              <span className="text-[10px] text-amber-500 opacity-0 group-hover:opacity-100 transition">↓</span>
+            </div>
+          </button>
 
-          {/* Pending Community Posts (Emerald Alert) */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border-2 border-emerald-500/40 dark:border-emerald-500/30 shadow-sm space-y-1">
+          {/* Pending Community Posts (Emerald Alert) -> Posts Tab */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('posts');
+              document.getElementById('admin-control-tabs')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            title="Review Pending Community Posts"
+            className="p-5 rounded-3xl bg-white dark:bg-slate-900 border-2 border-emerald-500/40 dark:border-emerald-500/30 shadow-sm space-y-1 text-left hover:border-emerald-500 hover:shadow-md hover:-translate-y-1 transition cursor-pointer w-full group block"
+          >
             <div className="flex items-center justify-between text-emerald-600">
-              <Layers className="w-5 h-5" />
+              <Layers className="w-5 h-5 group-hover:scale-110 transition" />
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
                 Approval
               </span>
             </div>
             <div className="text-2xl font-black text-emerald-600">{stats.pendingPosts}</div>
-            <div className="text-xs text-slate-500 font-medium">Posts Awaiting Review</div>
-          </div>
+            <div className="text-xs text-slate-500 font-medium group-hover:text-emerald-600 transition flex items-center justify-between">
+              <span>Posts Awaiting Review</span>
+              <span className="text-[10px] text-emerald-500 opacity-0 group-hover:opacity-100 transition">↓</span>
+            </div>
+          </button>
 
-          {/* Academic Q&A Solved */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1">
+          {/* Academic Q&A Solved -> Questions Page */}
+          <Link
+            href="/questions"
+            title="View Academic Q&A Discussions"
+            className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1 hover:border-purple-500/60 hover:shadow-md hover:-translate-y-1 transition cursor-pointer group block"
+          >
             <div className="flex items-center justify-between text-purple-600 dark:text-purple-400">
-              <HelpCircle className="w-5 h-5" />
+              <HelpCircle className="w-5 h-5 group-hover:scale-110 transition" />
               <span className="text-[10px] font-bold text-slate-400">{stats.totalAnswers} Answers</span>
             </div>
             <div className="text-2xl font-black text-slate-900 dark:text-slate-100">{stats.activeQuestions}</div>
-            <div className="text-xs text-slate-500 font-medium">Academic Discussions</div>
-          </div>
+            <div className="text-xs text-slate-500 font-medium group-hover:text-purple-600 transition flex items-center justify-between">
+              <span>Academic Discussions</span>
+              <span className="text-[10px] text-purple-500 opacity-0 group-hover:opacity-100 transition">→</span>
+            </div>
+          </Link>
 
-          {/* Lost & Found Reunited */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1">
+          {/* Lost & Found Tracked -> Lost & Found Page */}
+          <Link
+            href="/lost-and-found"
+            title="View Lost & Found Campus Items"
+            className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1 hover:border-emerald-500/60 hover:shadow-md hover:-translate-y-1 transition cursor-pointer group block"
+          >
             <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-              <PackageSearch className="w-5 h-5" />
+              <PackageSearch className="w-5 h-5 group-hover:scale-110 transition" />
               <span className="text-[10px] font-bold text-slate-400">{stats.foundItems} Found</span>
             </div>
             <div className="text-2xl font-black text-slate-900 dark:text-slate-100">{stats.lostItems}</div>
-            <div className="text-xs text-slate-500 font-medium">Lost Belongings Tracked</div>
-          </div>
+            <div className="text-xs text-slate-500 font-medium group-hover:text-emerald-600 transition flex items-center justify-between">
+              <span>Lost Belongings Tracked</span>
+              <span className="text-[10px] text-emerald-500 opacity-0 group-hover:opacity-100 transition">→</span>
+            </div>
+          </Link>
 
         </div>
       )}
 
       {/* 3. INTERACTIVE ADMIN CONTROL TABS */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div id="admin-control-tabs" className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
         
         {/* Tab Header Bar */}
         <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 pt-4 gap-2 sm:gap-4 overflow-x-auto">
