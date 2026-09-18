@@ -44,9 +44,10 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
-import { Report, PastPaper, Profile, Post } from '@/types/database';
+import { Report, PastPaper, Profile, Post, Scholarship, OpportunityCategory } from '@/types/database';
 import { AdminAccessDenied } from '@/components/ui/AdminAccessDenied';
 import { KFUEIT_PROGRAMS } from '@/lib/constants';
+import { PlusCircle, Trash2, UploadCloud, Loader2 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const { user, isAdmin, isModerator, isModeratorOrAdmin, updateCurrentUserProfile } = useAuth();
@@ -58,10 +59,31 @@ export default function AdminDashboardPage() {
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [studentSearch, setStudentSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<'posts' | 'moderation' | 'papers' | 'students' | 'broadcast'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'moderation' | 'papers' | 'scholarships' | 'students' | 'broadcast'>('posts');
   const [postsSubTab, setPostsSubTab] = useState<'pending' | 'live' | 'rejected'>('pending');
   const [syncingStudents, setSyncingStudents] = useState(false);
   const [selectedStudentForDossier, setSelectedStudentForDossier] = useState<Profile | null>(null);
+
+  // Scholarships State
+  const [scholarships, setScholarships] = useState<Scholarship[]>([]);
+  const [scholarshipSearch, setScholarshipSearch] = useState('');
+  const [scholarshipCategoryFilter, setScholarshipCategoryFilter] = useState<OpportunityCategory | 'all'>('all');
+
+  // Admin Create Scholarship Modal
+  const [adminSchModalOpen, setAdminSchModalOpen] = useState(false);
+  const [schTitle, setSchTitle] = useState('');
+  const [schOrg, setSchOrg] = useState('');
+  const [schDesc, setSchDesc] = useState('');
+  const [schCategory, setSchCategory] = useState<OpportunityCategory>('Scholarship');
+  const [schEligibility, setSchEligibility] = useState('');
+  const [schDeadline, setSchDeadline] = useState('');
+  const [schUrl, setSchUrl] = useState('');
+  const [schAmount, setSchAmount] = useState('');
+  const [schLocation, setSchLocation] = useState('');
+  const [schImageUrl, setSchImageUrl] = useState('');
+  const [uploadingSchImage, setUploadingSchImage] = useState(false);
+  const [schImageError, setSchImageError] = useState('');
+  const schFileInputRef = React.useRef<HTMLInputElement>(null);
   
   // Broadcast Announcement State
   const [broadcastTitle, setBroadcastTitle] = useState('');
@@ -135,6 +157,7 @@ export default function AdminDashboardPage() {
       setPendingPosts(allAdminPosts.filter((p) => p.status === 'pending'));
       setAllPosts(allAdminPosts);
       setProfiles(UniMateStore.getProfiles());
+      setScholarships(UniMateStore.getScholarships());
     };
     load();
     UniMateStore.syncProfiles();
@@ -177,6 +200,81 @@ export default function AdminDashboardPage() {
     }
     UniMateStore.toggleUserSuspension(targetUserId);
     showNotice(`User account status updated for ${name}.`);
+  };
+
+  const handleToggleScholarshipVerified = (schId: string) => {
+    const verified = UniMateStore.toggleScholarshipVerified(schId);
+    showNotice(verified ? 'Scholarship verified with campus seal.' : 'Scholarship verification badge removed.');
+  };
+
+  const handleUpdateScholarshipStatus = (schId: string, status: 'open' | 'closing_soon' | 'closed') => {
+    UniMateStore.updateScholarshipStatus(schId, status);
+    showNotice(`Scholarship status set to ${status}.`);
+  };
+
+  const handleDeleteScholarship = (schId: string, title: string) => {
+    if (!window.confirm(`Are you sure you want to delete scholarship "${title}"?`)) return;
+    UniMateStore.deleteScholarship(schId);
+    showNotice('Scholarship deleted permanently.');
+  };
+
+  const handleAdminSchImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSchImageError('');
+    if (!file.type.startsWith('image/')) {
+      setSchImageError('Please select a valid image file (PNG, JPG, WEBP).');
+      return;
+    }
+    if (file.size > 1 * 1024 * 1024) {
+      setSchImageError('Image exceeds 1 MB limit.');
+      return;
+    }
+    setUploadingSchImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'scholarships');
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to upload');
+      setSchImageUrl(data.url);
+    } catch (err: any) {
+      setSchImageError(err?.message || 'Upload failed.');
+    } finally {
+      setUploadingSchImage(false);
+      if (schFileInputRef.current) schFileInputRef.current.value = '';
+    }
+  };
+
+  const handleCreateScholarshipAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!schTitle.trim() || !schUrl.trim()) return;
+
+    UniMateStore.createScholarship({
+      author: user || undefined,
+      title: schTitle.trim(),
+      organization: schOrg.trim() || 'KFUEIT Student Financial Aid Office',
+      description: schDesc.trim(),
+      category: schCategory,
+      eligibility: schEligibility.trim() || 'All eligible students',
+      deadline: schDeadline || '2026-12-31',
+      application_url: schUrl.trim(),
+      image_url: schImageUrl.trim() || undefined,
+      amount: schAmount.trim() || undefined,
+      location: schLocation.trim() || 'Rahim Yar Khan, Punjab',
+      status: 'open'
+    });
+
+    setSchTitle('');
+    setSchOrg('');
+    setSchDesc('');
+    setSchUrl('');
+    setSchAmount('');
+    setSchLocation('');
+    setSchImageUrl('');
+    setAdminSchModalOpen(false);
+    showNotice('New campus scholarship opportunity posted successfully.');
   };
 
   const handleRoleChange = (targetUserId: string, newRole: 'student' | 'moderator', name: string) => {
@@ -260,13 +358,13 @@ export default function AdminDashboardPage() {
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-[11px] font-bold text-amber-300">
                 <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                <span>FACULTY ADMINISTRATION & CAMPUS OPERATIONS CONSOLE</span>
+                <span>CAMPUS ADMINISTRATION & OPERATIONS CONSOLE</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                Dean & Administrator Command Center
+                Platform Administrator Command Center
               </h1>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Logged in as <strong className="text-amber-300">{user?.full_name || 'Administrator'}</strong> ({user?.program || 'Campus Dean & Platform Administrator'}). Supervise student safety, academic content approvals, account standing, and emergency broadcasts.
+                Logged in as <strong className="text-amber-300">{user?.full_name || 'Administrator'}</strong> ({user?.program || 'Platform Administrator'}). Supervise student safety, academic content approvals, account standing, and emergency broadcasts.
               </p>
               <div className="pt-0.5">
                 <button
@@ -301,7 +399,7 @@ export default function AdminDashboardPage() {
           {/* Total Students -> Directory */}
           <Link
             href="/admin/users"
-            title="View Student & Faculty Directory"
+            title="View Student Directory"
             className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1 hover:border-indigo-500/60 hover:shadow-md hover:-translate-y-1 transition cursor-pointer group block"
           >
             <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400">
@@ -470,6 +568,21 @@ export default function AdminDashboardPage() {
             <span>Past Paper Verification</span>
             <span className="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-black">
               {pendingPapers.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('scholarships')}
+            className={`pb-3 text-xs font-bold flex items-center gap-2 border-b-2 transition shrink-0 ${
+              activeTab === 'scholarships'
+                ? 'border-amber-600 text-amber-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Award className="w-4 h-4" />
+            <span>Scholarships & Grants</span>
+            <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[10px] font-black">
+              {scholarships.length}
             </span>
           </button>
 
@@ -770,6 +883,20 @@ export default function AdminDashboardPage() {
                         <p className="text-xs text-slate-600 dark:text-slate-300">
                           {r.details || 'Flagged by student peer.'}
                         </p>
+                        {r.evidence_url && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-slate-400">Attached Evidence:</span>
+                            <a
+                              href={r.evidence_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-[11px] font-bold hover:underline"
+                            >
+                              <img src={r.evidence_url} alt="Evidence" className="w-5 h-5 rounded object-cover" />
+                              <span>View Evidence Screenshot ↗</span>
+                            </a>
+                          </div>
+                        )}
                       </div>
 
                       {r.status === 'pending' ? (
@@ -807,7 +934,7 @@ export default function AdminDashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                    Faculty Examination Verification Desk
+                    Academic Examination Verification Desk
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Verify student-uploaded past examination papers and notes before releasing them to the campus resource portal.
@@ -867,6 +994,189 @@ export default function AdminDashboardPage() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB: SCHOLARSHIPS MANAGEMENT */}
+          {activeTab === 'scholarships' && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <Award className="w-4 h-4 text-amber-600" />
+                    <span>Campus Scholarships & Opportunity Board</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Manage financial aid, research grants, internships, and verified partner scholarships.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setAdminSchModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm shadow-amber-600/20 transition cursor-pointer shrink-0"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>Post Opportunity</span>
+                  </button>
+
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search grant, title, org..."
+                      value={scholarshipSearch}
+                      onChange={(e) => setScholarshipSearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Category Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                {(['all', 'Scholarship', 'Internship', 'Workshop', 'Competition', 'Fellowship', 'Job'] as const).map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setScholarshipCategoryFilter(cat)}
+                    className={`px-3 py-1 rounded-xl font-bold transition shrink-0 ${
+                      scholarshipCategoryFilter === cat
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {cat === 'all' ? 'All Opportunities' : cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Listings List */}
+              {(() => {
+                const filteredList = scholarships.filter((s) => {
+                  const matchCat = scholarshipCategoryFilter === 'all' || s.category === scholarshipCategoryFilter;
+                  const matchSearch =
+                    s.title.toLowerCase().includes(scholarshipSearch.toLowerCase()) ||
+                    s.organization.toLowerCase().includes(scholarshipSearch.toLowerCase()) ||
+                    s.description.toLowerCase().includes(scholarshipSearch.toLowerCase());
+                  return matchCat && matchSearch;
+                });
+
+                return filteredList.length === 0 ? (
+                  <div className="py-12 text-center text-slate-400 text-xs">
+                    <Award className="w-8 h-8 text-amber-500 mx-auto mb-2 opacity-50" />
+                    No scholarships matching the criteria. Click &quot;Post Opportunity&quot; to publish one.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {filteredList.map((sch) => (
+                      <div key={sch.id} className="py-4 flex flex-col md:flex-row md:items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 flex-1">
+                          {sch.image_url ? (
+                            <img
+                              src={sch.image_url}
+                              alt={sch.title}
+                              className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/40 text-amber-600 flex items-center justify-center font-bold text-xl shrink-0">
+                              <Award className="w-7 h-7" />
+                            </div>
+                          )}
+
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                                {sch.title}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                                {sch.category}
+                              </span>
+                              {sch.is_verified ? (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3" /> Verified
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-500 dark:bg-slate-800">
+                                  Unverified
+                                </span>
+                              )}
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
+                                sch.status === 'open'
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                  : sch.status === 'closing_soon'
+                                  ? 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300'
+                                  : 'bg-slate-100 text-slate-500'
+                              }`}>
+                                {sch.status.replace('_', ' ')}
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                              {sch.description}
+                            </p>
+
+                            <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap pt-0.5">
+                              <span>Org: <strong className="text-slate-600 dark:text-slate-300">{sch.organization}</strong></span>
+                              <span>•</span>
+                              <span>Deadline: <strong className="text-slate-600 dark:text-slate-300">{sch.deadline}</strong></span>
+                              {sch.amount && (
+                                <>
+                                  <span>•</span>
+                                  <span>Grant: <strong className="text-amber-600 dark:text-amber-400">{sch.amount}</strong></span>
+                                </>
+                              )}
+                              <span>•</span>
+                              <a
+                                href={sch.application_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5"
+                              >
+                                Application Link <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Admin Actions */}
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                          <button
+                            onClick={() => handleToggleScholarshipVerified(sch.id)}
+                            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 transition ${
+                              sch.is_verified
+                                ? 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300'
+                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                            }`}
+                            title="Toggle Verified badge"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            {sch.is_verified ? 'Unverify' : 'Verify'}
+                          </button>
+
+                          <select
+                            value={sch.status}
+                            onChange={(e) => handleUpdateScholarshipStatus(sch.id, e.target.value as any)}
+                            className="px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold focus:outline-none"
+                          >
+                            <option value="open">Open</option>
+                            <option value="closing_soon">Closing Soon</option>
+                            <option value="closed">Closed</option>
+                          </select>
+
+                          <button
+                            onClick={() => handleDeleteScholarship(sch.id, sch.title)}
+                            className="p-1.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-600 transition"
+                            title="Delete Scholarship"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -1261,7 +1571,7 @@ export default function AdminDashboardPage() {
             <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/60 space-y-2">
               <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
                 <Shield className="w-3.5 h-3.5 text-amber-600" />
-                <span>Anonymity & Faculty Accountability Policy</span>
+                <span>Anonymity & Community Accountability Policy</span>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
                 {selectedStudentForDossier.is_anonymous ? (
@@ -1492,6 +1802,192 @@ export default function AdminDashboardPage() {
                 >
                   <Save className="w-3.5 h-3.5" />
                   {savingProfile ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* 7. ADMIN POST SCHOLARSHIP MODAL */}
+      {adminSchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
+            
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/60">
+                  <Award className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="text-base font-extrabold text-slate-900 dark:text-white">Post Campus Opportunity</h2>
+                  <p className="text-[11px] text-slate-500">Publish scholarships, internships, or funding for students</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAdminSchModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateScholarshipAdmin} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={schTitle}
+                  onChange={(e) => setSchTitle(e.target.value)}
+                  placeholder="e.g. HEC Need-Based Scholarship Fall 2026"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Organization</label>
+                  <input
+                    type="text"
+                    value={schOrg}
+                    onChange={(e) => setSchOrg(e.target.value)}
+                    placeholder="e.g. HEC Pakistan or KFUEIT"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                  <select
+                    value={schCategory}
+                    onChange={(e) => setSchCategory(e.target.value as any)}
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold focus:outline-none"
+                  >
+                    <option value="Scholarship">Scholarship</option>
+                    <option value="Internship">Internship</option>
+                    <option value="Workshop">Workshop</option>
+                    <option value="Competition">Competition</option>
+                    <option value="Fellowship">Fellowship</option>
+                    <option value="Job">Job</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Deadline</label>
+                  <input
+                    type="date"
+                    value={schDeadline}
+                    onChange={(e) => setSchDeadline(e.target.value)}
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Stipend / Grant Amount</label>
+                  <input
+                    type="text"
+                    value={schAmount}
+                    onChange={(e) => setSchAmount(e.target.value)}
+                    placeholder="e.g. 100% Tuition Fee + Stipend"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Application URL *</label>
+                <input
+                  type="url"
+                  required
+                  value={schUrl}
+                  onChange={(e) => setSchUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Eligibility Criteria</label>
+                <input
+                  type="text"
+                  value={schEligibility}
+                  onChange={(e) => setSchEligibility(e.target.value)}
+                  placeholder="e.g. CGPA >= 3.0, Household income < 50k"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Summary / Details</label>
+                <textarea
+                  rows={3}
+                  value={schDesc}
+                  onChange={(e) => setSchDesc(e.target.value)}
+                  placeholder="Brief description of requirements, eligibility, and process..."
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:outline-none resize-none"
+                />
+              </div>
+
+              {/* Flyer Image Upload (Max 1MB) */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Opportunity Flyer / Banner <span className="text-slate-400 font-normal">(Max 1 MB)</span>
+                </label>
+                {schImageError && <p className="text-[11px] font-bold text-red-600">{schImageError}</p>}
+                {schImageUrl ? (
+                  <div className="flex items-center justify-between p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <img src={schImageUrl} alt="Flyer preview" className="w-10 h-10 rounded-lg object-cover" />
+                      <span className="text-xs font-bold text-emerald-600">Flyer uploaded to R2</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSchImageUrl('')}
+                      className="p-1 text-slate-400 hover:text-red-500"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <button
+                      type="button"
+                      onClick={() => schFileInputRef.current?.click()}
+                      disabled={uploadingSchImage}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                    >
+                      {uploadingSchImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5 text-amber-600" />}
+                      <span>{uploadingSchImage ? 'Uploading...' : 'Direct Image Upload (Max 1 MB)'}</span>
+                    </button>
+                    <input ref={schFileInputRef} type="file" accept="image/*" onChange={handleAdminSchImageUpload} className="hidden" />
+                    <input
+                      type="url"
+                      value={schImageUrl}
+                      onChange={(e) => setSchImageUrl(e.target.value)}
+                      placeholder="Or paste direct image URL (https://...)"
+                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAdminSchModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-600/20"
+                >
+                  Publish Opportunity
                 </button>
               </div>
             </form>

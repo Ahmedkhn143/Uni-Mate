@@ -29,7 +29,7 @@ export function AdminAccessDenied() {
           Campus Administration Clearance Required
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
-          The Campus Administration Console is strictly restricted to verified university deans, faculty staff, and moderation personnel.
+          The Campus Administration Console is strictly restricted to verified university campus administrators and moderation personnel.
         </p>
       </div>
 
@@ -53,14 +53,14 @@ export function AdminAccessDenied() {
         </div>
       </div>
 
-      {/* Faculty Clearance Notice */}
+      {/* Administration Clearance Notice */}
       <div className="p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/30 text-left space-y-1.5">
         <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 text-xs font-bold">
           <Key className="w-4 h-4 text-amber-600 shrink-0" />
           <span>University Administrative Clearance Required</span>
         </div>
         <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-          Access to this console requires verified university faculty or dean authorization on the official <strong className="font-mono text-amber-700 dark:text-amber-300">@kfueit.edu.pk</strong> campus domain.
+          Access to this console requires verified campus administrator authorization on the official <strong className="font-mono text-amber-700 dark:text-amber-300">@kfueit.edu.pk</strong> campus domain.
         </p>
       </div>
 

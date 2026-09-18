@@ -157,15 +157,18 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    const finalDept = departmentId === 'other' ? (customDepartment.trim() || 'Other Department') : (departmentId || 'cs');
-    const finalProgram = program.trim() || 'BS Computer Science';
+    const isCustomDept = departmentId === 'other';
+    const finalDeptId = isCustomDept ? '' : (departmentId || (departments[0]?.id || ''));
+    const finalProgram = isCustomDept && customDepartment.trim()
+      ? `${customDepartment.trim()} - ${program.trim() || 'Degree Student'}`
+      : (program.trim() || 'BS Computer Science');
 
     // Call Supabase signup - this triggers a real verification email with OTP to the user's university inbox
     const res = await signup({
       fullName: fullName.trim(),
       email: cleanEmail,
       password,
-      departmentId: finalDept,
+      departmentId: finalDeptId,
       program: finalProgram,
       semester: Number(semester),
       regNo: regNo.trim(),
@@ -449,7 +452,7 @@ export default function RegisterPage() {
                     </option>
                   ))}
                   <option value="other" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-                    Other Department / Faculty...
+                    Other Department / Discipline...
                   </option>
                 </select>
 

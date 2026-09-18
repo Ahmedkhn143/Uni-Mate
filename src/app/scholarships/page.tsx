@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   Award, 
@@ -14,7 +14,11 @@ import {
   PlusCircle, 
   CheckCircle2,
   AlertTriangle,
-  Building
+  Building,
+  UploadCloud,
+  Trash2,
+  Loader2,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -43,6 +47,47 @@ export default function ScholarshipsPage() {
   const [newUrl, setNewUrl] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const [newLocation, setNewLocation] = useState('');
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImageError('');
+    if (!file.type.startsWith('image/')) {
+      setImageError('Please select a valid image (PNG, JPG, WEBP).');
+      return;
+    }
+    if (file.size > 1 * 1024 * 1024) {
+      setImageError('Image exceeds 1 MB size limit. Please choose a smaller photo.');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'scholarships');
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to upload image');
+      }
+      setNewImageUrl(data.url);
+    } catch (err: any) {
+      setImageError(err?.message || 'Could not upload image.');
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     const load = () => {
@@ -77,6 +122,7 @@ export default function ScholarshipsPage() {
       eligibility: newEligibility.trim(),
       deadline: newDeadline || '2026-11-30',
       application_url: newUrl.trim(),
+      image_url: newImageUrl.trim() || undefined,
       amount: newAmount.trim() || undefined,
       location: newLocation.trim() || undefined,
       status: 'open'
@@ -87,6 +133,7 @@ export default function ScholarshipsPage() {
     setNewDesc('');
     setNewUrl('');
     setNewAmount('');
+    setNewImageUrl('');
     setSubmitModalOpen(false);
   };
 
@@ -257,6 +304,13 @@ export default function ScholarshipsPage() {
                   </p>
                 </div>
 
+                {/* Flyer / Banner Image if attached */}
+                {sch.image_url && (
+                  <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-48">
+                    <img src={sch.image_url} alt={sch.title} className="w-full h-36 object-cover" />
+                  </div>
+                )}
+
                 <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
                   {sch.description}
                 </p>
@@ -410,6 +464,73 @@ export default function ScholarshipsPage() {
                   placeholder="Key responsibilities or application requirements..."
                   className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
                 />
+              </div>
+
+              {/* Flyer / Promotional Image Upload */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Opportunity Flyer / Banner <span className="text-slate-400 font-normal">(Optional, Max 1 MB)</span>
+                </label>
+
+                {imageError && (
+                  <p className="text-[11px] font-bold text-red-600 dark:text-red-400">{imageError}</p>
+                )}
+
+                {newImageUrl ? (
+                  <div className="relative rounded-xl border border-slate-200 dark:border-slate-700 p-2 bg-slate-50 dark:bg-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <img
+                        src={newImageUrl}
+                        alt="Opportunity preview"
+                        className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700"
+                      />
+                      <div className="truncate text-xs">
+                        <p className="font-bold text-slate-800 dark:text-slate-200 truncate">Banner Attached</p>
+                        <span className="text-[10px] text-emerald-600 font-semibold block">Ready to attach</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setNewImageUrl('')}
+                      className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                      title="Remove banner"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingImage}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 transition cursor-pointer disabled:opacity-50"
+                      >
+                        {uploadingImage ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+                        ) : (
+                          <UploadCloud className="w-4 h-4 text-amber-600" />
+                        )}
+                        <span>{uploadingImage ? 'Uploading to R2...' : 'Upload Flyer Image (Max 1 MB)'}</span>
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </div>
+                    <input
+                      type="url"
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      placeholder="Or paste banner image URL (https://...)"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">

@@ -277,6 +277,7 @@ export interface Report {
   item_title?: string;
   reason: ReportReason;
   details: string;
+  evidence_url?: string;
   status: 'pending' | 'resolved' | 'dismissed';
   admin_notes?: string;
   created_at: string;

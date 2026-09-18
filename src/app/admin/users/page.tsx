@@ -26,17 +26,44 @@ export default function AdminUsersPage() {
   const [syncing, setSyncing] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = () => {
+  const fetchUsers = async (showToast = false) => {
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/admin/users');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.users)) {
+          setProfiles(data.users);
+          UniMateStore.setProfiles(data.users);
+          if (showToast) {
+            setToastMsg(`Synchronized ${data.users.length} registered students from database.`);
+            setTimeout(() => setToastMsg(null), 3500);
+          }
+          return;
+        }
+      }
+      // Fallback to in-memory store
       setProfiles([...UniMateStore.getProfiles()]);
-    };
-    load();
-    UniMateStore.syncProfiles();
-    const unsubscribe = UniMateStore.subscribe(load);
+    } catch (err) {
+      console.error('Failed to sync students from API:', err);
+      setProfiles([...UniMateStore.getProfiles()]);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    // Initial direct fetch from server
+    fetchUsers(false);
+
+    // Keep store in sync
+    const unsubscribe = UniMateStore.subscribe(() => {
+      setProfiles([...UniMateStore.getProfiles()]);
+    });
 
     const interval = setInterval(() => {
-      UniMateStore.syncProfiles();
-    }, 12000);
+      fetchUsers(false);
+    }, 15000);
 
     return () => {
       unsubscribe();
@@ -111,7 +138,10 @@ export default function AdminUsersPage() {
           <div>
             <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <Users className="w-6 h-6 text-indigo-600" />
-              Student & Faculty Directory
+              <span>Student Directory</span>
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                {profiles.length} registered
+              </span>
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Manage student accounts, review campus roles, and suspend accounts that violate the honor code.
@@ -121,17 +151,13 @@ export default function AdminUsersPage() {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
-              onClick={async () => {
-                setSyncing(true);
-                await UniMateStore.syncProfiles();
-                setSyncing(false);
-              }}
+              onClick={() => fetchUsers(true)}
               disabled={syncing}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold shadow-xs transition shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold shadow-xs transition shrink-0 cursor-pointer disabled:opacity-50"
               title="Refresh student list from database"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${syncing ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
+              <span>{syncing ? 'Syncing...' : 'Refresh'}</span>
             </button>
 
             <div className="relative w-full sm:w-64">

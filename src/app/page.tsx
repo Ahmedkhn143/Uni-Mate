@@ -90,15 +90,15 @@ export default function LandingPage() {
     },
     {
       q: 'Are the past exam papers verified and free to download?',
-      a: 'Yes, 100% free. All exam papers in the archive are verified by departmental student leads and faculty moderators. Papers include annotated solutions, grading schemes, and in-browser preview without forced third-party downloads.'
+      a: 'Yes, 100% free. All exam papers in the archive are verified by departmental student leads and academic moderators. Papers include annotated solutions, grading schemes, and in-browser preview without forced third-party downloads.'
     },
     {
       q: 'How does the Campus Lost & Found recovery process work?',
       a: 'When you find or lose an item, post a report with the campus location and photograph. You can communicate anonymously through in-app peer messaging. Items turned in to the library or department admin offices are specially tagged as Verified Handover.'
     },
     {
-      q: 'Can faculty members and teaching assistants answer student questions?',
-      a: 'Yes. Verified teaching assistants and professors have special Faculty Badges. Their answers are highlighted with accepted verification checkmarks and pinned to the top of course discussion threads.'
+      q: 'Can senior students and peer mentors answer student questions?',
+      a: 'Yes. Verified top student contributors and academic peer mentors have special Mentor Badges. Their answers are highlighted with accepted verification checkmarks and pinned to the top of course discussion threads.'
     }
   ];
 
@@ -181,7 +181,7 @@ export default function LandingPage() {
             </div>
             <div className="p-3 text-center">
               <p className="text-2xl sm:text-3xl font-black text-purple-600 dark:text-purple-400 tracking-tight">100%</p>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Faculty & TA Verified</p>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Peer & Admin Verified</p>
             </div>
           </div>
 
@@ -286,9 +286,9 @@ export default function LandingPage() {
                         <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Indexed Min-Heaps, AVL Rotations, Graph DFS/BFS</p>
                       </div>
                       <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-800 space-y-1">
-                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Faculty Endorsement</span>
+                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Academic Review</span>
                         <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Verified by Dr. Sarah Hayes
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Verified by Student Academic Lead
                         </p>
                       </div>
                       <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-800 space-y-1">
@@ -316,7 +316,7 @@ export default function LandingPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                            SOLVED BY FACULTY TA
+                            VERIFIED PEER SOLUTION
                           </span>
                           <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">CS-302 Algorithm Engineering</span>
                         </div>
@@ -483,7 +483,7 @@ void decreaseKey(int vertex, int newDist) {
               Organized Specifically For Your Degree
             </h2>
             <p className="mt-4 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-              Every course, past paper, and technical question is indexed hierarchically by Faculty → Degree Program → Semester → Subject.
+              Every course, past paper, and technical question is indexed hierarchically by Department → Degree Program → Semester → Subject.
             </p>
           </div>
 
@@ -521,7 +521,7 @@ void decreaseKey(int vertex, int newDist) {
               <div className="p-6 sm:p-8 rounded-3xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8">
                 <div className="space-y-4 max-w-xl">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-bold">
-                    <span>Faculty Active Roster</span>
+                    <span>Department Active Roster</span>
                   </div>
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
                     {current.name} Academic Commons
@@ -548,7 +548,7 @@ void decreaseKey(int vertex, int newDist) {
                     href={user ? "/past-papers" : "/login"}
                     className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition"
                   >
-                    Explore Faculty Archive →
+                    Explore Academic Archive →
                   </Link>
                 </div>
               </div>
@@ -615,7 +615,7 @@ void decreaseKey(int vertex, int newDist) {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <span>Hierarchical paper archive with faculty verification stamps and solved step-by-step guides</span>
+                  <span>Hierarchical paper archive with verified solutions and step-by-step guides</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />

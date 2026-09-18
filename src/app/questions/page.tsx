@@ -86,7 +86,7 @@ export default function QuestionsPage() {
             <span>Academic Q&A Hub</span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Ask homework questions, clarify lecture concepts, and collaborate with course peers and faculty.
+            Ask homework questions, clarify lecture concepts, and collaborate with course peers and academic mentors.
           </p>
         </div>
 

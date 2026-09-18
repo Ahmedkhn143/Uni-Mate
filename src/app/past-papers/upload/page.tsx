@@ -171,7 +171,7 @@ export default function UploadPastPaperPage() {
           <span>
             {isAdmin 
               ? 'Paper published directly to the resource library!'
-              : 'Paper submitted successfully! It will appear in the library upon faculty verification.'}
+              : 'Paper submitted successfully! It will appear in the library upon admin verification.'}
           </span>
         </div>
       )}

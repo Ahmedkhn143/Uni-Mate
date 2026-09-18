@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Flag, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Flag, X, AlertTriangle, CheckCircle2, UploadCloud, Image as ImageIcon, Trash2, Loader2 } from 'lucide-react';
 import { ReportReason } from '@/types/database';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -27,11 +27,56 @@ export function ReportModal({ isOpen, onClose, itemType, itemId, itemTitle }: Re
   const { user } = useAuth();
   const [selectedReason, setSelectedReason] = useState<ReportReason>('spam');
   const [details, setDetails] = useState('');
+  const [evidenceUrl, setEvidenceUrl] = useState('');
+  const [uploadingEvidence, setUploadingEvidence] = useState(false);
+  const [evidenceError, setEvidenceError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
+
+  const handleEvidenceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setEvidenceError('');
+
+    if (!file.type.startsWith('image/')) {
+      setEvidenceError('Please select a valid image file (PNG, JPG, WEBP).');
+      return;
+    }
+
+    if (file.size > 1 * 1024 * 1024) {
+      setEvidenceError('Image evidence exceeds 1 MB limit. Please choose a smaller image.');
+      return;
+    }
+
+    setUploadingEvidence(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'reports-evidence');
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to upload evidence');
+      }
+
+      setEvidenceUrl(data.url);
+    } catch (err: any) {
+      setEvidenceError(err?.message || 'Could not upload evidence image. You may also paste an image URL directly.');
+    } finally {
+      setUploadingEvidence(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,13 +99,15 @@ export function ReportModal({ isOpen, onClose, itemType, itemId, itemTitle }: Re
         item_id: itemId,
         item_title: itemTitle || `${itemType.toUpperCase()} item #${itemId.slice(0, 8)}`,
         reason: selectedReason,
-        details: details.trim()
+        details: details.trim(),
+        evidence_url: evidenceUrl.trim() || undefined
       });
 
       setSubmitted(true);
       setTimeout(() => {
         setSubmitted(false);
         setDetails('');
+        setEvidenceUrl('');
         onClose();
       }, 1800);
     } catch {
@@ -140,6 +187,75 @@ export function ReportModal({ isOpen, onClose, itemType, itemId, itemTitle }: Re
                   </label>
                 ))}
               </div>
+            </div>
+
+            {/* Supporting Evidence Upload (Max 1MB) */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Supporting Evidence / Screenshot <span className="text-slate-400 font-normal">(Optional, Max 1 MB)</span>
+              </label>
+
+              {evidenceError && (
+                <p className="text-[11px] font-bold text-red-600 dark:text-red-400">{evidenceError}</p>
+              )}
+
+              {evidenceUrl ? (
+                <div className="relative rounded-xl border border-slate-200 dark:border-slate-700 p-2 bg-slate-50 dark:bg-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <img
+                      src={evidenceUrl}
+                      alt="Uploaded evidence"
+                      className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700"
+                    />
+                    <div className="truncate text-xs">
+                      <p className="font-bold text-slate-800 dark:text-slate-200 truncate">Evidence Attached</p>
+                      <a href={evidenceUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline truncate block">
+                        View Image Link
+                      </a>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEvidenceUrl('')}
+                    className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                    title="Remove evidence"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingEvidence}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 transition cursor-pointer disabled:opacity-50"
+                    >
+                      {uploadingEvidence ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                      ) : (
+                        <UploadCloud className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      )}
+                      <span>{uploadingEvidence ? 'Uploading...' : 'Upload Image Evidence (Max 1 MB)'}</span>
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleEvidenceUpload}
+                      className="hidden"
+                    />
+                  </div>
+                  <input
+                    type="url"
+                    value={evidenceUrl}
+                    onChange={(e) => setEvidenceUrl(e.target.value)}
+                    placeholder="Or paste direct image URL (https://...)"
+                    className="w-full text-xs px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              )}
             </div>
 
             <div>

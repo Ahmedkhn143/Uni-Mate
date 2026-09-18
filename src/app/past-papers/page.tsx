@@ -250,7 +250,7 @@ export default function PastPapersPage() {
 
                 {paper.status === 'pending' && (
                   <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[11px] font-medium">
-                    ⏳ Under faculty moderation review
+                    ⏳ Under admin moderation review
                   </div>
                 )}
               </div>

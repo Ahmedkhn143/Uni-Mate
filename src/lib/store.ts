@@ -594,6 +594,12 @@ export class UniMateStore {
     return this.profiles;
   }
 
+  public static setProfiles(profiles: Profile[]): void {
+    this.profiles = profiles;
+    this.persistProfiles();
+    this.notify();
+  }
+
   public static async syncProfiles(): Promise<Profile[]> {
     if (!isSupabaseConfigured()) return this.profiles;
     const supabase = createClient();
@@ -606,7 +612,7 @@ export class UniMateStore {
         .select('*')
         .order('created_at', { ascending: false });
 
-      const merged: Profile[] = [...INITIAL_PROFILES];
+      const merged: Profile[] = this.profiles.length > 0 ? [...this.profiles] : [...INITIAL_PROFILES];
 
 
       if (dbProfiles && dbProfiles.length > 0) {
@@ -1685,15 +1691,43 @@ export class UniMateStore {
     return newSch;
   }
 
-  public static verifyScholarship(id: string): void {
-    const sch = this.scholarships.find((s) => s.id === id);
-    if (sch) {
-      sch.is_verified = true;
+  public static deleteScholarship(id: string): void {
+    const idx = this.scholarships.findIndex((s) => s.id === id);
+    if (idx >= 0) {
+      this.scholarships.splice(idx, 1);
       this.notify();
 
       const supabase = createClient();
       if (supabase) {
-        supabase.from('scholarships').update({ is_verified: true }).eq('id', id);
+        supabase.from('scholarships').delete().eq('id', id).then(() => {});
+      }
+    }
+  }
+
+  public static toggleScholarshipVerified(id: string): boolean {
+    const sch = this.scholarships.find((s) => s.id === id);
+    if (sch) {
+      sch.is_verified = !sch.is_verified;
+      this.notify();
+
+      const supabase = createClient();
+      if (supabase) {
+        supabase.from('scholarships').update({ is_verified: sch.is_verified }).eq('id', id).then(() => {});
+      }
+      return sch.is_verified;
+    }
+    return false;
+  }
+
+  public static updateScholarshipStatus(id: string, status: 'open' | 'closing_soon' | 'closed'): void {
+    const sch = this.scholarships.find((s) => s.id === id);
+    if (sch) {
+      sch.status = status;
+      this.notify();
+
+      const supabase = createClient();
+      if (supabase) {
+        supabase.from('scholarships').update({ status }).eq('id', id).then(() => {});
       }
     }
   }
@@ -1919,6 +1953,7 @@ export class UniMateStore {
     item_title?: string;
     reason: Report['reason'];
     details: string;
+    evidence_url?: string;
   }): Report {
     const tempId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'rep_' + Date.now();
     const newRep: Report = {
@@ -1930,6 +1965,7 @@ export class UniMateStore {
       item_title: data.item_title,
       reason: data.reason,
       details: data.details,
+      evidence_url: data.evidence_url,
       status: 'pending',
       created_at: new Date().toISOString()
     };
@@ -1944,6 +1980,7 @@ export class UniMateStore {
         item_id: data.item_id,
         reason: data.reason,
         details: data.details,
+        evidence_url: data.evidence_url || null,
         status: 'pending'
       }).select().single().then(({ data: created, error }) => {
         if (created) newRep.id = created.id;

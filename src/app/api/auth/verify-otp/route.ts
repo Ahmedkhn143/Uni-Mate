@@ -152,12 +152,17 @@ export async function POST(request: Request) {
     // Using the REAL auth.users UUID so RLS works correctly for all
     // future database operations.
     // ----------------------------------------------------------------
+    // Validate UUID format so Postgres doesn't reject custom strings
+    const isUUID = (val?: string | null) =>
+      Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val));
+    const safeDeptId = isUUID(profileData?.departmentId) ? profileData!.departmentId : null;
+
     const profileRecord = {
       id: authUserId,
       email: cleanEmail,
       full_name: profileData?.fullName || cleanEmail.split('@')[0],
       role: 'student',
-      department_id: profileData?.departmentId || null,
+      department_id: safeDeptId,
       program: profileData?.program || 'BS Computer Science',
       semester: profileData?.semester ? Number(profileData.semester) : 1,
       student_id: profileData?.studentId || profileData?.regNo || null,

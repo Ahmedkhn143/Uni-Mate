@@ -131,6 +131,27 @@ export default function AdminReportsPage() {
                     <span className="font-semibold text-slate-700 dark:text-slate-200">Report details: </span>
                     {report.details}
                   </p>
+
+                  {report.evidence_url && (
+                    <div className="mt-2.5 flex items-center gap-3">
+                      <a
+                        href={report.evidence_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group inline-flex items-center gap-2 p-1.5 pr-3 rounded-xl bg-red-50/80 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-100 transition"
+                      >
+                        <img
+                          src={report.evidence_url}
+                          alt="Evidence screenshot"
+                          className="w-10 h-10 rounded-lg object-cover border border-red-200 dark:border-red-800 shrink-0"
+                        />
+                        <div>
+                          <span className="block text-[11px]">Screenshot Evidence Attached</span>
+                          <span className="text-[10px] text-red-500 font-normal group-hover:underline">Click to view full image ↗</span>
+                        </div>
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-left sm:text-right text-[11px] text-slate-400 shrink-0">

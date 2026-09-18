@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Users, 
   PlusCircle, 
@@ -15,7 +15,10 @@ import {
   ShieldCheck,
   CheckCircle2,
   Lock,
-  Shield
+  Shield,
+  UploadCloud,
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -52,7 +55,48 @@ export default function CommunityPage() {
 
   // Report State
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [reportTarget, setReportTarget] = useState<{ id: string; title: string } | null>(null);
+  const [reportTarget, setReportTarget] = useState<{ id: string; title: string; type?: 'post' | 'user' } | null>(null);
+
+  // Direct Image Upload State (Max 1MB)
+  const [uploadingPostImage, setUploadingPostImage] = useState(false);
+  const [postImageError, setPostImageError] = useState('');
+  const postFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePostImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPostImageError('');
+    if (!file.type.startsWith('image/')) {
+      setPostImageError('Please select a valid image file (PNG, JPG, WEBP).');
+      return;
+    }
+    if (file.size > 1 * 1024 * 1024) {
+      setPostImageError('Image exceeds 1 MB limit. Please select a smaller photo.');
+      return;
+    }
+
+    setUploadingPostImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'posts');
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to upload image');
+      }
+      setPostImageUrl(data.url);
+    } catch (err: any) {
+      setPostImageError(err?.message || 'Could not upload image. You may also paste a URL.');
+    } finally {
+      setUploadingPostImage(false);
+      if (postFileInputRef.current) postFileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     const load = () => {
@@ -193,6 +237,19 @@ export default function CommunityPage() {
                       <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
                         {post.is_anonymous ? 'Anonymous Student' : post.author_name}
                       </span>
+                      {!post.is_anonymous && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReportTarget({ id: post.author_id, title: `Student: ${post.author_name}`, type: 'user' });
+                            setReportModalOpen(true);
+                          }}
+                          className="text-slate-400 hover:text-red-500 transition ml-0.5 p-0.5 rounded"
+                          title={`Report student ${post.author_name} with evidence`}
+                        >
+                          <Flag className="w-2.5 h-2.5" />
+                        </button>
+                      )}
                       {post.author_role === 'admin' && (
                         <span className="text-[10px] font-bold px-1.5 py-0.2 bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 rounded flex items-center gap-0.5">
                           <ShieldCheck className="w-2.5 h-2.5" /> Staff
@@ -384,15 +441,71 @@ export default function CommunityPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Optional Image URL</label>
-                <input
-                  type="url"
-                  value={postImageUrl}
-                  onChange={(e) => setPostImageUrl(e.target.value)}
-                  placeholder="https://example.com/flyer.jpg"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
-                />
+              {/* Optional Image Upload & URL */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Attached Image / Flyer <span className="text-slate-400 font-normal">(Optional, Max 1 MB)</span>
+                </label>
+
+                {postImageError && (
+                  <p className="text-[11px] font-bold text-red-600 dark:text-red-400">{postImageError}</p>
+                )}
+
+                {postImageUrl ? (
+                  <div className="relative rounded-xl border border-slate-200 dark:border-slate-700 p-2 bg-slate-50 dark:bg-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <img
+                        src={postImageUrl}
+                        alt="Post media preview"
+                        className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700"
+                      />
+                      <div className="truncate text-xs">
+                        <p className="font-bold text-slate-800 dark:text-slate-200 truncate">Image Attached</p>
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block">Ready to publish</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPostImageUrl('')}
+                      className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                      title="Remove image"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => postFileInputRef.current?.click()}
+                        disabled={uploadingPostImage}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 transition cursor-pointer disabled:opacity-50"
+                      >
+                        {uploadingPostImage ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                        ) : (
+                          <UploadCloud className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        )}
+                        <span>{uploadingPostImage ? 'Uploading to R2...' : 'Direct Image Upload (Max 1 MB)'}</span>
+                      </button>
+                      <input
+                        ref={postFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePostImageUpload}
+                        className="hidden"
+                      />
+                    </div>
+                    <input
+                      type="url"
+                      value={postImageUrl}
+                      onChange={(e) => setPostImageUrl(e.target.value)}
+                      placeholder="Or paste direct image URL (https://...)"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Anonymous Post Toggle */}
@@ -419,7 +532,7 @@ export default function CommunityPage() {
                     <span>Publish Anonymously</span>
                   </label>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Your post will show as <strong>"Anonymous Student"</strong> to fellow students. Campus admins always retain verified faculty access.
+                    Your post will show as <strong>"Anonymous Student"</strong> to fellow students. Campus moderators retain audit logs for community safety.
                   </p>
                 </div>
               </div>
@@ -449,7 +562,7 @@ export default function CommunityPage() {
         <ReportModal
           isOpen={reportModalOpen}
           onClose={() => setReportModalOpen(false)}
-          itemType="post"
+          itemType={reportTarget.type || 'post'}
           itemId={reportTarget.id}
           itemTitle={reportTarget.title}
         />

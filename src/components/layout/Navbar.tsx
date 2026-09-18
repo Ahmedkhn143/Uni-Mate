@@ -92,50 +92,42 @@ export function Navbar() {
             </div>
 
             {/* Public Center Links */}
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden lg:flex items-center gap-6 xl:gap-7">
               <Link
                 href="/#features"
-                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                className="text-xs xl:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
               >
                 Features
               </Link>
               <Link
-                href={user ? "/community" : "/login"}
-                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center gap-1.5"
-              >
-                <Layers className="w-4 h-4 text-emerald-500" />
-                <span>All Posts</span>
-              </Link>
-              <Link
                 href={user ? "/questions" : "/login"}
-                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                className="text-xs xl:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
               >
                 Q&A Forum
               </Link>
               <Link
                 href={user ? "/past-papers" : "/login"}
-                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                className="text-xs xl:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
               >
                 Past Papers
               </Link>
               <Link
                 href={user ? "/lost-and-found" : "/login"}
-                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                className="text-xs xl:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
               >
                 Lost & Found
               </Link>
               <Link
                 href={user ? "/scholarships" : "/login"}
-                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                className="text-xs xl:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
               >
                 Scholarships
               </Link>
               <Link
                 href="/cgpa-calculator"
-                className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center gap-1"
+                className="text-xs xl:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
               >
-                <Calculator className="w-3.5 h-3.5 text-emerald-500" />
-                <span>CGPA Calc</span>
+                CGPA Calculator
               </Link>
             </nav>
 
@@ -219,14 +211,6 @@ export function Navbar() {
                 Features
               </Link>
               <Link
-                href={user ? "/community" : "/login"}
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
-              >
-                <Layers className="w-4 h-4 text-emerald-500" />
-                <span>All Posts (Campus Feed)</span>
-              </Link>
-              <Link
                 href={user ? "/questions" : "/login"}
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -257,10 +241,9 @@ export function Navbar() {
               <Link
                 href="/cgpa-calculator"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2.5 rounded-xl text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+                className="p-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <Calculator className="w-4 h-4 text-emerald-500" />
-                <span>CGPA Calculator</span>
+                CGPA Calculator
               </Link>
             </div>
 
@@ -537,7 +520,7 @@ export function Navbar() {
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 font-mono truncate">{user.email}</p>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1">
-                          {isAdmin ? 'University Faculty Operations' : `${user.program || 'Student'} • Sem ${user.semester || 4}`}
+                          {isAdmin ? 'Campus Administration' : `${user.program || 'Student'} • Sem ${user.semester || 4}`}
                         </p>
                       </div>
 

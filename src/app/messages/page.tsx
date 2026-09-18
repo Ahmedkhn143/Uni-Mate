@@ -99,7 +99,7 @@ function MessagesContent() {
     return (
       <div className="py-20 text-center space-y-4">
         <h2 className="text-xl font-bold">Campus Messaging</h2>
-        <p className="text-xs text-slate-500">Sign in to communicate with students and faculty.</p>
+        <p className="text-xs text-slate-500">Sign in to communicate with fellow students and mentors.</p>
       </div>
     );
   }
