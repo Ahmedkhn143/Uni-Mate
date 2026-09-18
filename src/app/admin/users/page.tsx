@@ -140,7 +140,7 @@ export default function AdminUsersPage() {
               <Users className="w-6 h-6 text-indigo-600" />
               <span>Student Directory</span>
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                {profiles.length} registered
+                {profiles.filter((p) => p.role !== 'admin').length} registered student{profiles.filter((p) => p.role !== 'admin').length === 1 ? '' : 's'}
               </span>
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -380,6 +380,24 @@ export default function AdminUsersPage() {
             </div>
           ))}
         </div>
+
+        {filtered.length === 0 && (
+          <div className="py-16 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center mx-auto">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                {search ? 'No matching students found' : 'No students registered yet'}
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1">
+                {search
+                  ? `No student matches "${search}". Try searching by a different name or email.`
+                  : 'New students will automatically appear here once they complete registration and verify their university email OTP.'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>

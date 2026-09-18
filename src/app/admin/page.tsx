@@ -149,6 +149,20 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
+    const fetchAdminUsers = async () => {
+      try {
+        const res = await fetch('/api/admin/users');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.users)) {
+            setProfiles(data.users);
+            UniMateStore.setProfiles(data.users);
+            setStats(UniMateStore.getStats());
+          }
+        }
+      } catch (e) {}
+    };
+
     const load = () => {
       setStats(UniMateStore.getStats());
       setReports(UniMateStore.getReports());
@@ -160,11 +174,13 @@ export default function AdminDashboardPage() {
       setScholarships(UniMateStore.getScholarships());
     };
     load();
+    fetchAdminUsers();
     UniMateStore.syncProfiles();
     const unsubscribe = UniMateStore.subscribe(load);
 
     // Auto-sync students every 12 seconds so new registrations appear dynamically
     const interval = setInterval(() => {
+      fetchAdminUsers();
       UniMateStore.syncProfiles();
     }, 12000);
 
@@ -1197,6 +1213,17 @@ export default function AdminDashboardPage() {
                     type="button"
                     onClick={async () => {
                       setSyncingStudents(true);
+                      try {
+                        const res = await fetch('/api/admin/users');
+                        if (res.ok) {
+                          const data = await res.json();
+                          if (data.success && Array.isArray(data.users)) {
+                            setProfiles(data.users);
+                            UniMateStore.setProfiles(data.users);
+                            setStats(UniMateStore.getStats());
+                          }
+                        }
+                      } catch (e) {}
                       await UniMateStore.syncProfiles();
                       setSyncingStudents(false);
                       showNotice('Student directory synchronized with university database.');
@@ -1347,6 +1374,24 @@ export default function AdminDashboardPage() {
                     </div>
                   );
                 })}
+
+                {filteredStudents.length === 0 && (
+                  <div className="py-14 text-center rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700 space-y-3 my-2">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center mx-auto">
+                      <Users className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                        {studentSearch ? 'No matching students found' : 'No students registered yet'}
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1">
+                        {studentSearch
+                          ? `No student matches "${studentSearch}". Try searching by name or email.`
+                          : 'As soon as students sign up with their university email, their full profiles will appear here automatically.'}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -2023,7 +2023,7 @@ export class UniMateStore {
     const activeLostFound = this.lostFound.filter((i) => (now - new Date(i.created_at).getTime()) <= TWO_WEEKS_MS);
 
     return {
-      totalStudents: students > 0 ? students : this.profiles.length,
+      totalStudents: students,
       totalUsers: this.profiles.length,
       totalModerators: this.profiles.filter((p) => p.role === 'moderator').length,
       activeQuestions: this.questions.length,
