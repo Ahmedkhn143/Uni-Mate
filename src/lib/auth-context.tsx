@@ -311,7 +311,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAnonymous?: boolean;
     studentId?: string;
     avatarUrl?: string;
-  }): Promise<{ success: boolean; error?: string; requiresVerification?: boolean }> => {
+  }): Promise<{ success: boolean; error?: string; requiresVerification?: boolean; devOtp?: string }> => {
     setIsLoading(true);
     const cleanEmail = data.email.trim().toLowerCase();
 
