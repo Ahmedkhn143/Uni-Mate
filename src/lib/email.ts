@@ -1,4 +1,43 @@
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
+
+// ─── Resend Professional Mailer ──────────────────────────────────────────────
+async function sendViaResend(
+  toEmail: string,
+  subject: string,
+  html: string,
+  text: string
+): Promise<{ success: boolean; error?: string }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return { success: false, error: 'RESEND_API_KEY not configured.' };
+  }
+
+  try {
+    const resend = new Resend(apiKey);
+    const fromAddress = process.env.RESEND_FROM || 'UniMate KFUEIT <onboarding@resend.dev>';
+
+    const { data, error } = await resend.emails.send({
+      from: fromAddress,
+      to: toEmail,
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      console.error(`[UniMate Resend] ❌ Resend error:`, error.message);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`[UniMate Resend] ✅ Delivered verification email to ${toEmail} via Resend (ID: ${data?.id})`);
+    return { success: true };
+  } catch (err: any) {
+    const msg = err?.message || 'Unknown Resend error';
+    console.error(`[UniMate Resend] ❌ Exception:`, msg);
+    return { success: false, error: msg };
+  }
+}
 
 // ─── Email HTML Template ────────────────────────────────────────────────────
 function buildHtmlEmail(otpCode: string, studentName: string): string {
@@ -118,6 +157,18 @@ export async function sendVerificationEmail(
     `If you did not request this, please ignore this email.`;
 
   console.log(`[UniMate Email] Sending OTP code directly to student: ${cleanToEmail}`);
+
+  // 1. Try Resend if API Key is configured (Professional transactional email)
+  if (process.env.RESEND_API_KEY) {
+    console.log(`[UniMate Email] Dispatching via Resend service to ${cleanToEmail}`);
+    const resendResult = await sendViaResend(cleanToEmail, subject, html, text);
+    if (resendResult.success) {
+      return { success: true };
+    }
+    console.warn(`[UniMate Email] Resend dispatch failed, attempting SMTP fallback: ${resendResult.error}`);
+  }
+
+  // 2. Fallback to SMTP
   const smtpResult = await sendViaGmailSMTP(cleanToEmail, subject, html, text);
 
   if (smtpResult.success) {
