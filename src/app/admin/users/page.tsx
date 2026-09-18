@@ -11,7 +11,8 @@ import {
   ArrowLeft,
   Mail,
   GraduationCap,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -68,6 +69,19 @@ export default function AdminUsersPage() {
     );
     const name = target?.full_name || 'User';
     setToastMsg(`Role updated to ${newRole === 'moderator' ? 'Moderator' : 'Student'} for ${name}.`);
+    setTimeout(() => setToastMsg(null), 3500);
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!isAdmin) return;
+    const target = profiles.find((p) => p.id === userId);
+    const name = target?.full_name || 'Student';
+    if (!window.confirm(`Are you sure you want to permanently remove ${name} (${target?.email})? This action cannot be undone.`)) {
+      return;
+    }
+    setProfiles((prev) => prev.filter((p) => p.id !== userId));
+    await UniMateStore.deleteUser(userId);
+    setToastMsg(`Account for ${name} has been permanently deleted.`);
     setTimeout(() => setToastMsg(null), 3500);
   };
 
@@ -220,16 +234,27 @@ export default function AdminUsersPage() {
                         ) : null}
 
                         {u.role !== 'admin' && (
-                          <button
-                            onClick={() => handleToggleSuspend(u.id)}
-                            className={`px-3 py-1 rounded-xl text-xs font-bold transition ${
-                              u.is_suspended
-                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                : 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950 dark:text-red-300'
-                            }`}
-                          >
-                            {u.is_suspended ? 'Restore' : 'Suspend'}
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleToggleSuspend(u.id)}
+                              className={`px-3 py-1 rounded-xl text-xs font-bold transition ${
+                                u.is_suspended
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                  : 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-300'
+                              }`}
+                            >
+                              {u.is_suspended ? 'Restore' : 'Suspend'}
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteUser(u.id)}
+                              title="Permanently Remove Student"
+                              className="px-2.5 py-1 rounded-xl text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950 dark:text-red-300 transition flex items-center gap-1"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              <span>Remove</span>
+                            </button>
+                          </>
                         )}
                       </div>
                     ) : (
@@ -311,10 +336,18 @@ export default function AdminUsersPage() {
                     className={`flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold transition text-center ${
                       u.is_suspended
                         ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                        : 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/50 dark:text-red-300'
+                        : 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-300'
                     }`}
                   >
                     {u.is_suspended ? 'Restore' : 'Suspend'}
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteUser(u.id)}
+                    title="Permanently Remove Student"
+                    className="p-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-950/50 dark:text-red-300 transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               )}

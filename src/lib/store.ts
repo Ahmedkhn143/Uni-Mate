@@ -587,12 +587,8 @@ export class UniMateStore {
         .select('*')
         .order('created_at', { ascending: false });
 
-      const merged = [...this.profiles];
-      INITIAL_PROFILES.forEach((initP) => {
-        if (!merged.some((m) => m.email.toLowerCase() === initP.email.toLowerCase())) {
-          merged.push(initP);
-        }
-      });
+      const merged: Profile[] = [...INITIAL_PROFILES];
+
 
       if (dbProfiles && dbProfiles.length > 0) {
         dbProfiles.forEach((p: any) => {
@@ -785,6 +781,23 @@ export class UniMateStore {
       }).catch((e) => console.warn('Admin sync error:', e));
     }
 
+    return true;
+  }
+
+  public static async deleteUser(userId: string): Promise<boolean> {
+    this.profiles = this.profiles.filter((p) => p.id !== userId);
+    this.persistProfiles();
+    this.notify();
+
+    if (typeof window !== 'undefined') {
+      try {
+        await fetch(`/api/admin/users?userId=${encodeURIComponent(userId)}`, {
+          method: 'DELETE'
+        });
+      } catch (e) {
+        console.warn('Admin delete sync error:', e);
+      }
+    }
     return true;
   }
 
@@ -1466,6 +1479,7 @@ export class UniMateStore {
     exam_type: PastPaper['exam_type'];
     title: string;
     file_name: string;
+    file_url?: string;
     file_size_kb: number;
   }): PastPaper {
     const tempId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'pp_' + Date.now();
@@ -1482,7 +1496,7 @@ export class UniMateStore {
       year: data.year,
       exam_type: data.exam_type,
       title: data.title,
-      file_url: '/sample-papers/CS201_Midterm_2025.pdf',
+      file_url: data.file_url || '/sample-papers/CS201_Midterm_2025.pdf',
       file_name: data.file_name,
       file_size_kb: data.file_size_kb,
       downloads: 0,

@@ -24,6 +24,7 @@ export default function UploadPastPaperPage() {
   
   const [fileName, setFileName] = useState('');
   const [fileSizeKb, setFileSizeKb] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -65,6 +66,7 @@ export default function UploadPastPaperPage() {
     }
 
     setError('');
+    setSelectedFile(file);
     setFileName(file.name);
     setFileSizeKb(sizeKb);
     if (!title) {
@@ -73,7 +75,7 @@ export default function UploadPastPaperPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
       setError('Please sign in to contribute past examination papers.');
@@ -92,6 +94,21 @@ export default function UploadPastPaperPage() {
     setSubmitting(true);
 
     try {
+      let fileUrl = '';
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('folder', 'past-papers');
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.success && uploadData.url) {
+          fileUrl = uploadData.url;
+        }
+      }
+
       const selectedDept = departments.find((d) => d.id === departmentId);
       const selectedSubj = subjects.find((s) => s.id === subjectId);
 
@@ -107,6 +124,7 @@ export default function UploadPastPaperPage() {
         exam_type: examType,
         title: title.trim(),
         file_name: fileName,
+        file_url: fileUrl || undefined,
         file_size_kb: fileSizeKb || 1250
       });
 

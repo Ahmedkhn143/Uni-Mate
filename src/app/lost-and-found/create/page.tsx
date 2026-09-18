@@ -13,7 +13,8 @@ import {
   Mail, 
   MessageSquare,
   AlertCircle,
-  Send
+  Send,
+  Upload
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { UniMateStore } from '@/lib/store';
@@ -38,9 +39,33 @@ function CreateLostFoundContent() {
   const [contactInfo, setContactInfo] = useState('');
   const [contactPreference, setContactPreference] = useState<'in_app' | 'email' | 'phone'>('in_app');
   const [imageUrl, setImageUrl] = useState('');
+  const [uploadingImg, setUploadingImg] = useState(false);
 
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImg(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'lost-found');
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setImageUrl(data.url);
+      }
+    } catch (err) {
+      console.error('Image upload failed', err);
+    } finally {
+      setUploadingImg(false);
+    }
+  };
 
   useEffect(() => {
     const typeParam = searchParams.get('type');
@@ -269,21 +294,45 @@ function CreateLostFoundContent() {
           </div>
         </div>
 
-        {/* Optional Image URL */}
+        {/* Item Photo (Uploaded to Cloudflare 10 GB Storage) */}
         <div>
           <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-            Optional Photo URL
+            Item Photo (Uploaded to Cloudflare 10 GB Storage)
           </label>
+          <div className="flex flex-col sm:flex-row gap-2.5 items-start sm:items-center mb-2">
+            <label className="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition">
+              <Upload className="w-3.5 h-3.5" />
+              <span>{uploadingImg ? 'Uploading to Cloudflare...' : 'Upload Photo'}</span>
+              <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImg} className="hidden" />
+            </label>
+            <span className="text-[11px] text-slate-400">or enter image link below</span>
+          </div>
           <div className="relative">
             <ImageIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="url"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://example.com/photo.jpg"
+              placeholder="https://... or choose photo above"
               className="w-full pl-10 pr-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
             />
           </div>
+          {imageUrl && (
+            <div className="mt-2.5 flex items-center gap-3 p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <img src={imageUrl} alt="Item Preview" className="h-14 w-14 object-cover rounded-lg border border-slate-200" />
+              <div className="text-[11px] text-slate-500 truncate flex-1">
+                <p className="font-semibold text-slate-800 dark:text-slate-200">Photo Attached</p>
+                <p className="truncate text-[10px] text-emerald-600 dark:text-emerald-400">{imageUrl}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setImageUrl('')}
+                className="text-xs text-red-500 hover:underline px-2"
+              >
+                Remove
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Submit */}

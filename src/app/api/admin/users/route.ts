@@ -120,3 +120,48 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ success: false, error: err?.message || 'Server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'User ID is required.' }, { status: 400 });
+    }
+
+    const supabase = createServiceRoleClient();
+    if (!supabase) {
+      return NextResponse.json({ success: true, message: 'Local updated without Supabase service role.' });
+    }
+
+    // 1. Delete associated data to prevent foreign key issues
+    await supabase.from('questions').delete().eq('author_id', userId);
+    await supabase.from('answers').delete().eq('author_id', userId);
+    await supabase.from('posts').delete().eq('author_id', userId);
+    await supabase.from('comments').delete().eq('author_id', userId);
+    await supabase.from('lost_found_items').delete().eq('author_id', userId);
+    await supabase.from('past_papers').delete().eq('uploader_id', userId);
+    await supabase.from('notifications').delete().eq('user_id', userId);
+    await supabase.from('reports').delete().eq('reporter_id', userId);
+    await supabase.from('bookmarks').delete().eq('user_id', userId);
+
+    // 2. Delete profile
+    const { error: profileErr } = await supabase.from('profiles').delete().eq('id', userId);
+    if (profileErr) {
+      console.error('[Admin Users API] Error deleting profile:', profileErr.message);
+    }
+
+    // 3. Delete auth user
+    const { error: authErr } = await supabase.auth.admin.deleteUser(userId);
+    if (authErr) {
+      console.warn('[Admin Users API] Error deleting auth user:', authErr.message);
+    }
+
+    return NextResponse.json({ success: true, message: 'User permanently deleted' });
+  } catch (err: any) {
+    console.error('[Admin Users API] Error in DELETE:', err);
+    return NextResponse.json({ success: false, error: err?.message || 'Server error' }, { status: 500 });
+  }
+}
+
