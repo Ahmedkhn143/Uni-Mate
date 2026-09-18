@@ -183,7 +183,13 @@ export default function RegisterPage() {
         router.push('/dashboard');
         return;
       }
-      setOtpDigits(['', '', '', '', '', '']);
+      if (res.devOtp) {
+        setOtpDigits(res.devOtp.split(''));
+        setSuccessMsg(`Verification code sent to ${cleanEmail}. (Code: ${res.devOtp})`);
+      } else {
+        setOtpDigits(['', '', '', '', '', '']);
+        setSuccessMsg(`Verification code sent to ${cleanEmail}. Please check your inbox.`);
+      }
       setResendTimer(60);
       setStep('otp');
     } else {
@@ -330,7 +336,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Success Alert */}
-        {step === 'form' && successMsg && (
+        {successMsg && (
           <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200 text-xs flex items-center gap-2.5 animate-in fade-in duration-150">
             <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <span className="leading-snug">{successMsg}</span>

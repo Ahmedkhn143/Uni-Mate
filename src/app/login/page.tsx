@@ -40,8 +40,16 @@ function LoginForm() {
       return;
     }
 
-    if (!cleanEmail.endsWith('@kfueit.edu.pk')) {
-      setError('Only verified @kfueit.edu.pk university email addresses are permitted.');
+    const domain = cleanEmail.split('@')[1]?.toLowerCase() || '';
+    const personalProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'live.com'];
+    const isAllowedDomain = 
+      domain === 'kfueit.edu.pk' ||
+      domain.endsWith('.kfueit.edu.pk') ||
+      domain.endsWith('.edu.pk') ||
+      personalProviders.includes(domain);
+
+    if (!cleanEmail.includes('@') || !isAllowedDomain) {
+      setError('Please enter a valid university email (@kfueit.edu.pk, *.edu.pk) or registered account email.');
       return;
     }
 

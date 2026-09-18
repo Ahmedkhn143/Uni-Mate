@@ -26,7 +26,7 @@ interface AuthContextType {
     isAnonymous?: boolean;
     studentId?: string;
     avatarUrl?: string;
-  }) => Promise<{ success: boolean; error?: string; requiresVerification?: boolean }>;
+  }) => Promise<{ success: boolean; error?: string; requiresVerification?: boolean; devOtp?: string }>;
   verifyOtp: (
     email: string,
     token: string,
@@ -333,7 +333,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setIsLoading(false);
-      return { success: true, requiresVerification: true };
+      return { success: true, requiresVerification: true, devOtp: resData.devOtp };
     } catch (err: any) {
       setIsLoading(false);
       return { success: false, error: err?.message || 'Failed to dispatch verification code.' };

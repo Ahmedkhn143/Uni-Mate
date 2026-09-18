@@ -95,11 +95,12 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(`[UniMate OTP] Successfully dispatched OTP to ${cleanEmail}`);
+    console.log(`[UniMate OTP] Successfully dispatched OTP to ${cleanEmail} (Code: ${code})`);
 
     return NextResponse.json({
       success: true,
       message: `A 6-digit confirmation code has been sent to ${cleanEmail}. Please check your inbox (and spam/junk folder).`,
+      devOtp: process.env.NODE_ENV !== 'production' ? code : undefined,
     });
   } catch (err: any) {
     console.error('[UniMate OTP] Unexpected error in send-otp:', err);

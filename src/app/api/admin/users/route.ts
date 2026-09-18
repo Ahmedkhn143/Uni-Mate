@@ -8,7 +8,12 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'Service role client not configured.' }, { status: 500 });
     }
 
-    // 1. Fetch all profiles from public.profiles
+    // 1. Fetch departments to resolve department names and codes
+    const { data: depts } = await supabase.from('departments').select('id, name, code');
+    const deptMap = new Map<string, { name: string; code: string }>();
+    (depts || []).forEach((d) => deptMap.set(d.id, { name: d.name, code: d.code }));
+
+    // 2. Fetch all profiles from public.profiles
     const { data: profiles, error: profileErr } = await supabase
       .from('profiles')
       .select('*')
@@ -19,13 +24,23 @@ export async function GET() {
       return NextResponse.json({ success: false, error: profileErr.message }, { status: 500 });
     }
 
-    // 2. Fetch all auth users to ensure no registered student is missed
+    // 3. Fetch all auth users to ensure no registered student is missed
     const { data: authData, error: authErr } = await supabase.auth.admin.listUsers();
     
     const profileMap = new Map<string, any>();
     (profiles || []).forEach((p) => {
-      profileMap.set(p.email.toLowerCase(), p);
-      profileMap.set(p.id, p);
+      const deptInfo = p.department_id ? deptMap.get(p.department_id) : null;
+      const enriched = {
+        ...p,
+        reg_no: p.student_id || p.reg_no || 'Pending Assignment',
+        student_id: p.student_id || p.reg_no || 'Pending Assignment',
+        department_name: deptInfo?.name || (p.department_id === 'd1111111-1111-1111-1111-111111111111' ? 'Department of Computer Science & IT' : 'Academic Department'),
+        department_code: deptInfo?.code || 'CS',
+        program: p.program || 'BS Computer Science',
+        semester: p.semester ? Number(p.semester) : 1
+      };
+      profileMap.set(p.email.toLowerCase(), enriched);
+      profileMap.set(p.id, enriched);
     });
 
     // Cross-reference with auth users
@@ -34,25 +49,49 @@ export async function GET() {
         if (!u.email) continue;
         const lowerEmail = u.email.toLowerCase();
         if (!profileMap.has(lowerEmail) && !profileMap.has(u.id)) {
+          const userRoll = u.user_metadata?.reg_no || u.user_metadata?.student_id || 'Pending';
+          const userProg = u.user_metadata?.program || 'BS Computer Science';
+          const userSem = u.user_metadata?.semester ? Number(u.user_metadata.semester) : 1;
+          const userDeptId = u.user_metadata?.department_id || null;
+          const deptInfo = userDeptId ? deptMap.get(userDeptId) : null;
+
           const synthesized = {
             id: u.id,
             email: u.email,
             full_name: u.user_metadata?.full_name || u.email.split('@')[0],
             role: (u.user_metadata?.role as any) || 'student',
-            department_id: null,
-            program: 'Degree Student',
-            semester: 1,
-            student_id: null,
-            reg_no: null,
+            department_id: userDeptId,
+            department_name: deptInfo?.name || 'Department of Computer Science & IT',
+            department_code: deptInfo?.code || 'CS',
+            program: userProg,
+            semester: userSem,
+            student_id: userRoll,
+            reg_no: userRoll,
             is_anonymous: false,
-            avatar_url: null,
-            bio: null,
+            avatar_url: u.user_metadata?.avatar_url || null,
+            bio: `Registered student in ${userProg}.`,
             is_suspended: false,
             created_at: u.created_at || new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
-          // Insert missing profile record asynchronously
-          supabase.from('profiles').upsert(synthesized).then(() => {});
+
+          // Whitelist columns for PostgreSQL profiles table upsert
+          const dbPayload = {
+            id: synthesized.id,
+            email: synthesized.email,
+            full_name: synthesized.full_name,
+            role: synthesized.role,
+            department_id: synthesized.department_id,
+            program: synthesized.program,
+            semester: synthesized.semester,
+            student_id: synthesized.student_id !== 'Pending' ? synthesized.student_id : null,
+            avatar_url: synthesized.avatar_url,
+            bio: synthesized.bio,
+            is_suspended: synthesized.is_suspended,
+            created_at: synthesized.created_at,
+            updated_at: synthesized.updated_at
+          };
+          supabase.from('profiles').upsert(dbPayload).then(() => {});
           profileMap.set(lowerEmail, synthesized);
         }
       }

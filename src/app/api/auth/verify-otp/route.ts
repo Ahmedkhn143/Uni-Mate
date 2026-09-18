@@ -156,7 +156,9 @@ export async function POST(request: Request) {
     const isUUID = (val?: string | null) =>
       Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val));
     const safeDeptId = isUUID(profileData?.departmentId) ? profileData!.departmentId : null;
+    const studentRegNo = (profileData?.regNo || profileData?.studentId || '').trim();
 
+    // Whitelist ONLY columns that physically exist in the Supabase 'profiles' table
     const profileRecord = {
       id: authUserId,
       email: cleanEmail,
@@ -165,9 +167,7 @@ export async function POST(request: Request) {
       department_id: safeDeptId,
       program: profileData?.program || 'BS Computer Science',
       semester: profileData?.semester ? Number(profileData.semester) : 1,
-      student_id: profileData?.studentId || profileData?.regNo || null,
-      reg_no: profileData?.regNo || null,
-      is_anonymous: profileData?.isAnonymous ?? false,
+      student_id: studentRegNo || null,
       avatar_url: profileData?.avatarUrl || null,
       bio: `Verified student in ${profileData?.program || 'BS Computer Science'}.`,
       is_suspended: false,
@@ -181,18 +181,35 @@ export async function POST(request: Request) {
 
     if (profileErr) {
       console.error('[UniMate Profile] Failed to upsert profile:', profileErr.message);
-      // Non-fatal — return success anyway since auth user was created.
-      // The profile may already exist or get created via trigger.
-      console.warn('[UniMate Profile] Continuing despite profile upsert warning.');
+      // Try direct update as fallback in case row was created by auth trigger
+      await supabase
+        .from('profiles')
+        .update({
+          full_name: profileRecord.full_name,
+          department_id: profileRecord.department_id,
+          program: profileRecord.program,
+          semester: profileRecord.semester,
+          student_id: profileRecord.student_id,
+          bio: profileRecord.bio,
+          avatar_url: profileRecord.avatar_url,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', authUserId);
     }
 
     console.log(
       `[UniMate] Successfully registered and verified student: ${cleanEmail} (auth_id: ${authUserId})`
     );
 
+    const fullProfile = {
+      ...profileRecord,
+      reg_no: studentRegNo || null,
+      is_anonymous: profileData?.isAnonymous ?? false
+    };
+
     return NextResponse.json({
       success: true,
-      profile: profileRecord,
+      profile: fullProfile,
     });
   } catch (err: any) {
     console.error('[UniMate OTP] Unexpected error in verify-otp:', err);
