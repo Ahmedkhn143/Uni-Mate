@@ -174,30 +174,56 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: true, message: 'Local updated without Supabase service role.' });
     }
 
-    // 1. Delete associated data to prevent foreign key issues
-    await supabase.from('questions').delete().eq('author_id', userId);
-    await supabase.from('answers').delete().eq('author_id', userId);
-    await supabase.from('posts').delete().eq('author_id', userId);
-    await supabase.from('comments').delete().eq('author_id', userId);
-    await supabase.from('lost_found_items').delete().eq('author_id', userId);
-    await supabase.from('past_papers').delete().eq('uploader_id', userId);
-    await supabase.from('notifications').delete().eq('user_id', userId);
-    await supabase.from('reports').delete().eq('reporter_id', userId);
-    await supabase.from('bookmarks').delete().eq('user_id', userId);
+    let targetId = userId.trim();
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
 
-    // 2. Delete profile
-    const { error: profileErr } = await supabase.from('profiles').delete().eq('id', userId);
+    if (!isUUID) {
+      // Search profile by email or student_id
+      const { data: foundProfile } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .or(`email.eq.${targetId},student_id.eq.${targetId}`)
+        .maybeSingle();
+
+      if (foundProfile?.id) {
+        targetId = foundProfile.id;
+      } else {
+        const { data: authList } = await supabase.auth.admin.listUsers();
+        const foundAuth = authList?.users?.find((u) => u.email?.toLowerCase() === targetId.toLowerCase());
+        if (foundAuth) targetId = foundAuth.id;
+      }
+    }
+
+    // 1. Delete associated student data across all child tables
+    await supabase.from('questions').delete().eq('author_id', targetId);
+    await supabase.from('answers').delete().eq('author_id', targetId);
+    await supabase.from('posts').delete().eq('author_id', targetId);
+    await supabase.from('comments').delete().eq('author_id', targetId);
+    await supabase.from('lost_found_items').delete().eq('author_id', targetId);
+    await supabase.from('past_papers').delete().eq('uploader_id', targetId);
+    await supabase.from('notifications').delete().eq('user_id', targetId);
+    await supabase.from('reports').delete().eq('reporter_id', targetId);
+    await supabase.from('bookmarks').delete().eq('user_id', targetId);
+
+    // 2. Delete profile from public.profiles
+    const { error: profileErr } = await supabase.from('profiles').delete().eq('id', targetId);
     if (profileErr) {
-      console.error('[Admin Users API] Error deleting profile:', profileErr.message);
+      console.error('[Admin Users API] Error deleting profile by id:', profileErr.message);
+      // Also attempt delete by email if target is an email
+      if (targetId.includes('@')) {
+        await supabase.from('profiles').delete().eq('email', targetId.toLowerCase());
+      }
     }
 
-    // 3. Delete auth user
-    const { error: authErr } = await supabase.auth.admin.deleteUser(userId);
-    if (authErr) {
-      console.warn('[Admin Users API] Error deleting auth user:', authErr.message);
+    // 3. Delete auth user from auth.users (triggers Postgres ON DELETE CASCADE)
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
+      const { error: authErr } = await supabase.auth.admin.deleteUser(targetId);
+      if (authErr) {
+        console.warn('[Admin Users API] Error deleting auth user:', authErr.message);
+      }
     }
 
-    return NextResponse.json({ success: true, message: 'User permanently deleted' });
+    return NextResponse.json({ success: true, message: 'User permanently deleted from campus database' });
   } catch (err: any) {
     console.error('[Admin Users API] Error in DELETE:', err);
     return NextResponse.json({ success: false, error: err?.message || 'Server error' }, { status: 500 });

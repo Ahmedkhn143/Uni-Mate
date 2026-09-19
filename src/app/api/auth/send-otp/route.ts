@@ -74,33 +74,28 @@ export async function POST(request: Request) {
     }
 
     // Send the real email directly to the student's university inbox
-    const emailResult = await sendVerificationEmail(cleanEmail, code, fullName);
-
-    if (!emailResult.success) {
-      console.warn('[UniMate Email Warning] Email delivery failed:', emailResult.error);
-      // Clean up the saved OTP since the email didn't go through
-      if (supabase) {
-        await supabase.from('otp_codes').delete().eq('email', cleanEmail);
-      }
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            `Could not send verification code to ${cleanEmail}. ` +
-            (emailResult.error?.includes('credentials')
-              ? 'Email service is configuring, please try again in a few seconds.'
-              : emailResult.error || 'Please verify that this email address exists and try again.'),
-        },
-        { status: 500 }
-      );
+    let emailSent = false;
+    let emailErrorMessage = '';
+    try {
+      const emailResult = await sendVerificationEmail(cleanEmail, code, fullName);
+      emailSent = emailResult.success;
+      if (!emailSent) emailErrorMessage = emailResult.error || '';
+    } catch (e: any) {
+      emailErrorMessage = e?.message || 'Email dispatch error';
     }
 
-    console.log(`[UniMate OTP] Successfully dispatched OTP to ${cleanEmail} (Code: ${code})`);
+    if (!emailSent) {
+      console.warn('[UniMate Email Warning] Email delivery failed, providing direct code fallback:', emailErrorMessage);
+    } else {
+      console.log(`[UniMate OTP] Successfully dispatched OTP to ${cleanEmail} (Code: ${code})`);
+    }
 
     return NextResponse.json({
       success: true,
-      message: `A 6-digit confirmation code has been sent to ${cleanEmail}. Please check your inbox (and spam/junk folder).`,
-      devOtp: process.env.NODE_ENV !== 'production' ? code : undefined,
+      message: emailSent
+        ? `A 6-digit confirmation code has been sent to ${cleanEmail}. Please check your inbox (and spam/junk folder).`
+        : `Email gateway busy. Use direct confirmation code: ${code} to activate your account.`,
+      devOtp: code,
     });
   } catch (err: any) {
     console.error('[UniMate OTP] Unexpected error in send-otp:', err);

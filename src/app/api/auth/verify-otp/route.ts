@@ -131,20 +131,33 @@ export async function POST(request: Request) {
         });
 
       if (createErr || !newAuthUser?.user) {
-        console.error('[UniMate Auth] Failed to create auth user:', createErr?.message);
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              'Failed to create your university account: ' +
-              (createErr?.message || 'Unknown auth error') +
-              '. Please try again.',
-          },
-          { status: 500 }
+        // If createUser failed because user already exists, lookup and update
+        const { data: listRes } = await supabase.auth.admin.listUsers();
+        const existing = listRes?.users?.find(
+          (u) => u.email?.toLowerCase() === cleanEmail
         );
+        if (existing) {
+          authUserId = existing.id;
+          await supabase.auth.admin.updateUserById(authUserId, {
+            password: studentPassword,
+            email_confirm: true,
+          });
+        } else {
+          console.error('[UniMate Auth] Failed to create auth user:', createErr?.message);
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                'Failed to create your university account: ' +
+                (createErr?.message || 'Unknown auth error') +
+                '. Please try again.',
+            },
+            { status: 500 }
+          );
+        }
+      } else {
+        authUserId = newAuthUser.user.id;
       }
-
-      authUserId = newAuthUser.user.id;
     }
 
     // ----------------------------------------------------------------

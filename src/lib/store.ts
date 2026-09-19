@@ -816,9 +816,13 @@ export class UniMateStore {
 
     if (typeof window !== 'undefined') {
       try {
-        await fetch(`/api/admin/users?userId=${encodeURIComponent(userId)}`, {
+        const res = await fetch(`/api/admin/users?userId=${encodeURIComponent(userId)}`, {
           method: 'DELETE'
         });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          console.warn('[UniMateStore] Delete user failed on backend:', data?.error);
+        }
       } catch (e) {
         console.warn('Admin delete sync error:', e);
       }

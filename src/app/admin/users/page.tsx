@@ -118,6 +118,10 @@ export default function AdminUsersPage() {
     await UniMateStore.deleteUser(userId);
     setToastMsg(`Account for ${name} has been permanently deleted.`);
     setTimeout(() => setToastMsg(null), 3500);
+    // Refresh to guarantee sync with serverless DB
+    setTimeout(() => {
+      fetchUsers(false);
+    }, 500);
   };
 
   const filtered = profiles.filter(

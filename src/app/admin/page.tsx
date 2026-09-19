@@ -218,6 +218,20 @@ export default function AdminDashboardPage() {
     showNotice(`User account status updated for ${name}.`);
   };
 
+  const handleDeleteStudent = async (targetUserId: string, name: string) => {
+    if (!isAdmin) {
+      showNotice('Access Restricted: Only Super Admin can delete students.');
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to permanently delete student ${name}? This action cannot be undone.`)) {
+      return;
+    }
+    setProfiles((prev) => prev.filter((p) => p.id !== targetUserId));
+    await UniMateStore.deleteUser(targetUserId);
+    setStats(UniMateStore.getStats());
+    showNotice(`Student ${name} has been permanently deleted.`);
+  };
+
   const handleToggleScholarshipVerified = (schId: string) => {
     const verified = UniMateStore.toggleScholarshipVerified(schId);
     showNotice(verified ? 'Scholarship verified with campus seal.' : 'Scholarship verification badge removed.');
@@ -1358,11 +1372,20 @@ export default function AdminDashboardPage() {
                               className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition ${
                                 st.is_suspended
                                   ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-                                  : 'bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-600'
+                                  : 'bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-700 dark:text-amber-300'
                               }`}
                             >
                               <UserX className="w-3.5 h-3.5" />
                               {st.is_suspended ? 'Reinstate' : 'Suspend'}
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteStudent(st.id, st.full_name)}
+                              className="px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white shadow-xs transition"
+                              title="Permanently remove student account"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete</span>
                             </button>
                           </>
                         ) : (
